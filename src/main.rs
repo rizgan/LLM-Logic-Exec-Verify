@@ -15,7 +15,7 @@ Rust language code of this function:
 {{{1}}}
 ```
 
-Write on Rust language code of test for this function:
+Write on Rust language code of test for this function (only test code without function implementation):
 ```rust
 #[cfg(test)]
 mod tests {
@@ -36,7 +36,7 @@ use super::*;
     println!("{}",code);
     println!("===============");
     create_rust_project(&code, "");
-    let (exit_code, output) = compile();
+    let (exit_code, output) = execute("build");
     if exit_code == 0 {
         let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
         let generation_test_result = generate(&generate_test_prompt);
@@ -44,15 +44,21 @@ use super::*;
         println!("{}", code_test);
         println!("===============");
         create_rust_project(&code, &code_test);
+        let (exit_code, output) = execute("test");
+        if exit_code == 0 {
+          println!("{}\n{}", code, code_test);
+        } else {
+
+        }
     }
 
 }
 
 
-fn compile() -> (i32, String) {
-    println!("cargo build");
+fn execute(command: &str) -> (i32, String) {
+    println!("cargo {}", command);
     let output = std::process::Command::new("cargo")
-        .arg("build")
+        .arg(command)
         .current_dir("sandbox")
         .output()
         .unwrap();
