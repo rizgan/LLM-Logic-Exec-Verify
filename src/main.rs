@@ -2,11 +2,29 @@ use serde::{Deserialize, Serialize};
 
 fn main() {
     let generate_code_prompt_template = r#"
-    {{{0}}}
+{{{0}}}
 
-    Write on Rust language code of this function:
-    ```rust
-    "#;
+Write on Rust language code of this function (only function body without example of usage):
+```rust
+fn solution(
+"#;
+    let generate_test_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Write on Rust language code of test for this function:
+```rust
+#[cfg(test)]
+mod tests {
+use super::*;
+
+#[test]
+"#;
+
+
     println!("Explain what function should to do:");
     let mut explanation = String::new();
     std::io::stdin().read_line(&mut explanation).unwrap();
@@ -17,17 +35,22 @@ fn main() {
     let code =  extract_code(&generation_code_result);
     println!("{}",code);
     println!("===============");
-    create_rust_project(&code);
-    println!("cargo build");
+    create_rust_project(&code, "");
     let (exit_code, output) = compile();
-    println!("Exit code: {}", exit_code);
-    println!("Output: {}", output);
-    println!("===============");
+    if exit_code == 0 {
+        let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
+        let generation_test_result = generate(&generate_test_prompt);
+        let code_test = extract_code(&generation_test_result);
+        println!("{}", code_test);
+        println!("===============");
+        create_rust_project(&code, &code_test);
+    }
 
 }
 
 
 fn compile() -> (i32, String) {
+    println!("cargo build");
     let output = std::process::Command::new("cargo")
         .arg("build")
         .current_dir("sandbox")
@@ -36,28 +59,29 @@ fn compile() -> (i32, String) {
     let exit_code = output.status.code().unwrap();
     let std_out = String::from_utf8(output.stdout).unwrap();
     let std_err = String::from_utf8(output.stderr).unwrap();
-    (exit_code, std_out + &std_err)
+    println!("Exit code: {}", exit_code);
+    let output = std_out + &std_err;
+    println!("Output: {}", output);
+    println!("===============");
+
+    (exit_code,output)
 }
-fn create_rust_project(code: &str) {
+fn create_rust_project(code: &str, test: &str) {
     let sandbox_path = "sandbox";
     let src_path = format!("{}/src", sandbox_path);
     let main_path = format!("{}/src/main.rs", sandbox_path);
     let cargo_path = format!("{}/Cargo.toml", sandbox_path);
-
     if !std::path::Path::new(sandbox_path).exists() {
         std::fs::create_dir(sandbox_path).unwrap();
     } else {
         std::fs::remove_dir_all(sandbox_path).unwrap();
         std::fs::create_dir(sandbox_path).unwrap();
     }
-
     if !std::path::Path::new(&src_path).exists() {
         std::fs::create_dir(&src_path).unwrap();
     }
-
     let main_rs = r#"fn main() {}"#;
-    std::fs::write(&main_path, format!("{}\n{}", main_rs, code)).unwrap();
-
+    std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, test)).unwrap();
 
     let cargo_toml = r#"
 [package]
@@ -68,10 +92,8 @@ edition = "2018"
 [dependencies]
 "#;
     std::fs::write(&cargo_path, cargo_toml).unwrap();
-
 }
 fn construct_prompt(template: &str, replace: Vec<&str>) -> String {
-
     let mut prompt = template.to_string();
     for (i, r) in replace.iter().enumerate() {
         let placeholder = format!("{{{{{{{}}}}}}}", i); // "{{{0}}}"
@@ -106,7 +128,7 @@ fn generate(prompt: &str) -> String {
             num_predict: 10000,
         },
     };
-    println!("Request: {:#?}", request);
+    println!("Request: {}", request.prompt);
     println!("===============");
 
     let response = reqwest::blocking::Client::new()
@@ -118,7 +140,7 @@ fn generate(prompt: &str) -> String {
         .unwrap();
 
     // print request and response
-    println!("Response: {:#?}", response);
+    println!("Response: {}", response.response);
     println!("===============");
 
     response.response
