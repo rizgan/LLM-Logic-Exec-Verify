@@ -28,6 +28,24 @@ Rewrite code for fixing errors of this function (only function body without exam
 ```rust
 "#;
 
+    let build_dependencies_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Write dependencies to Cargo.toml file (only dependencies section without Rust language code):
+```toml
+[package]
+name = "sandbox"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+"#;
+
+
     let generate_test_prompt_template = r#"
 {{{0}}}
 Rust language code of this function:
@@ -55,11 +73,19 @@ use super::*;
     let mut code =  extract_code(&generation_code_result);
     println!("{}",code);
     println!("===============");
-    create_rust_project(&code, "");
+
+    let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
+    let build_dependencies_result = generate(&build_dependencies_prompt);
+    let dependencies = extract_code(&build_dependencies_result);
+    println!("{}", dependencies);
+    println!("===============");
+
+
+    create_rust_project(&code, "", &dependencies);
     let (mut exit_code, mut output) = execute("build");
     let mut code_rewrite_count = 0;
-    while exit_code != 0 {
-        if code_rewrite_count > 3 {
+    while exit_code != 0 || code_rewrite_count == 0 {
+        if code_rewrite_count > 5 {
             println!("Too many attempts to rewrite code. Exit.");
             println!("===============");
             println!("{}", code);
@@ -71,7 +97,7 @@ use super::*;
             let code_test = extract_code(&generation_test_result);
             println!("{}", code_test);
             println!("===============");
-            create_rust_project(&code, &code_test);
+            create_rust_project(&code, &code_test, &dependencies);
             let (exit_code, output) = execute("test");
             if exit_code == 0 {
                 println!("{}\n{}", code, code_test);
@@ -83,7 +109,7 @@ use super::*;
             let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
             let rewrite_code_result = generate(&rewrite_code_prompt);
             code = extract_code(&rewrite_code_result);
-            create_rust_project(&code, "");
+            create_rust_project(&code, "", &dependencies);
             (exit_code, output) = execute("build");
         }
     }
@@ -108,7 +134,7 @@ fn execute(command: &str) -> (i32, String) {
 
     (exit_code,output)
 }
-fn create_rust_project(code: &str, test: &str) {
+fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     let sandbox_path = "sandbox";
     let src_path = format!("{}/src", sandbox_path);
     let main_path = format!("{}/src/main.rs", sandbox_path);
@@ -125,15 +151,14 @@ fn create_rust_project(code: &str, test: &str) {
     let main_rs = r#"fn main() {}"#;
     std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, test)).unwrap();
 
-    let cargo_toml = r#"
+    std::fs::write(&cargo_path, format!(r#"
 [package]
 name = "sandbox"
 version = "0.1.0"
 edition = "2018"
 
-[dependencies]
-"#;
-    std::fs::write(&cargo_path, cargo_toml).unwrap();
+{}
+"#, dependencies )).unwrap();
 }
 fn construct_prompt(template: &str, replace: Vec<&str>) -> String {
     let mut prompt = template.to_string();
