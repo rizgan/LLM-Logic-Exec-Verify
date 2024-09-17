@@ -1,5 +1,7 @@
-// parse json string and return struct User(age, name) and use serde = "1.0.128"
+// create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
+// take 1 parameter multiply by random number and return tuple with  result and random number
+// TODO extract code from prompt some times return empty ""
 use serde::{Deserialize, Serialize};
 
 fn main() {
@@ -298,7 +300,7 @@ fn construct_prompt(template: &str, replace: Vec<&str>) -> String {
     prompt
 }
 fn extract_code(input: &str) -> String {
-    let mut code = String::new();
+    let mut code = "".to_string();
     let mut in_code_block = false;
     for line in input.lines() {
         if line.starts_with("```") {
