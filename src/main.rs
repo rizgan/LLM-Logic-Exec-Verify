@@ -28,6 +28,20 @@ Rewrite code for fixing errors of this function (only function body without exam
 ```rust
 "#;
 
+
+ let build_dependencies_req_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+For this function is not required some dependencies in Cargo.toml file?pa
+1. Yes
+2. No
+Anser(just number):"#;
+
+
     let build_dependencies_prompt_template = r#"
 {{{0}}}
 Rust language code of this function:
@@ -74,11 +88,19 @@ use super::*;
     println!("{}",code);
     println!("===============");
 
-    let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
-    let build_dependencies_result = generate(&build_dependencies_prompt);
-    let dependencies = extract_code(&build_dependencies_result);
-    println!("{}", dependencies);
-    println!("===============");
+    let mut dependencies: String = "".to_string();
+    let build_dependencies_req_prompt = construct_prompt(build_dependencies_req_prompt_template, vec![&explanation, &code]);
+    let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
+    let build_dependencies_req = build_dependencies_req_result.trim();
+    if build_dependencies_req == "1" {
+        let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
+        let build_dependencies_result = generate(&build_dependencies_prompt);
+        dependencies = extract_code(&build_dependencies_result);
+        println!("{}", dependencies);
+        println!("===============");
+    }
+
+
 
 
     create_rust_project(&code, "", &dependencies);
@@ -101,6 +123,7 @@ use super::*;
             let (exit_code, output) = execute("test");
             if exit_code == 0 {
                 println!("{}\n{}", code, code_test);
+                return;
             } else {
 
             }
