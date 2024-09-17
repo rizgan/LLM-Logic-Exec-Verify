@@ -1,3 +1,4 @@
+// parse json string and return struct User(age, name)
 use serde::{Deserialize, Serialize};
 
 fn main() {
@@ -92,16 +93,13 @@ use super::*;
     let build_dependencies_req_prompt = construct_prompt(build_dependencies_req_prompt_template, vec![&explanation, &code]);
     let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
     let build_dependencies_req = build_dependencies_req_result.trim();
-    if build_dependencies_req == "1" {
+    if extract_number(build_dependencies_req) == 1 {
         let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
         let build_dependencies_result = generate(&build_dependencies_prompt);
         dependencies = extract_code(&build_dependencies_result);
         println!("{}", dependencies);
         println!("===============");
     }
-
-
-
 
     create_rust_project(&code, "", &dependencies);
     let (mut exit_code, mut output) = execute("build");
@@ -266,7 +264,16 @@ struct OllamaResponse {
     eval_duration: i64,
 }
 
-// tests
+
+fn extract_number(input: &str) -> i32 {
+    for word in input.split_whitespace() {
+        if let Ok(num) = word.parse::<i32>() {
+            return num;
+        }
+    }
+    1 // default value if no number found
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -285,5 +292,12 @@ mod tests {
         let replace = vec!["first", "second"];
         let expected = "This is a template with first and second";
         assert_eq!(construct_prompt(template, replace), expected);
+    }
+
+    #[test]
+    fn test_extract_number() {
+        let input = "Bla bla bla\nTututu 123\nmore bla bla\nTutu 456\nbla bla";
+        let expected = 123;
+        assert_eq!(extract_number(input), expected);
     }
 }
