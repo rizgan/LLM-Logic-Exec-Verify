@@ -9,21 +9,19 @@
 
 State Diagram
 ```mermaid
-stateDiagram
-    [*] --> AskWriteCode
-    AskWriteCode --> CompileCode
-    CompileCode --> IfCompileWithError
-    IfCompileWithError --> RewriteCodeByErrorMessage
-    RewriteCodeByErrorMessage --> CompileCode
-    CompileCode --> RunTest
-    RunTest --> IfTestFail
-    IfTestFail --> RewriteCodeByErrorTestMessage
-    RewriteCodeByErrorTestMessage --> CompileCode
-    IfTestFail --> End
-    IfCompileWithError --> End
-    IfTestFail --> End
+stateDiagram-v2
+    [*] --> Ask_Write_Code
+    Ask_Write_Code --> Compile_Code
+    Compile_Code --> Compile_Error{Compile Error?}
+    Compile_Error --> |Yes| Rewrite_Code_By_Error_Message
+    Compile_Error --> |No| Run_Test
+    Rewrite_Code_By_Error_Message --> Compile_Code
+    Run_Test --> Test_Fail{Test Fail?}
+    Test_Fail --> |Yes| Rewrite_Code_By_Test_Error_Message
+    Test_Fail --> |No| End
+    Rewrite_Code_By_Test_Error_Message --> Compile_Code
     End --> [*]
-```
+ ```   
 
 Entity diagram
 
