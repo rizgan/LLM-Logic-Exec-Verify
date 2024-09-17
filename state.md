@@ -30,11 +30,11 @@ Entity diagram
 1. Description of code
 2. Code
 3. Test
+4. Result of code compile
+5. Result of test
 ```mermaid
 classDiagram
-    DescriptionOfCode <|-- Code
-    DescriptionOfCode <|-- Test
-    DescriptionOfCode : +description
-    Code : +code
-    Test : +test
+    Code -- Compile_Result
+    Code -- Test
+    Compile_Result -- Test_Result
 ```
