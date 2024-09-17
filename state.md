@@ -12,13 +12,15 @@ State Diagram
 stateDiagram-v2
     [*] --> Ask_Write_Code
     Ask_Write_Code --> Compile_Code
-    Compile_Code --> Compile_Error{Compile Error?}
-    Compile_Error --> |Yes| Rewrite_Code_By_Error_Message
-    Compile_Error --> |No| Run_Test
+    Compile_Code --> Compile_Error_Choice
+    state Compile_Error_Choice <<choice>>
+    Compile_Error_Choice --> Rewrite_Code_By_Error_Message : Compile Error
+    Compile_Error_Choice --> Run_Test : No Error
     Rewrite_Code_By_Error_Message --> Compile_Code
-    Run_Test --> Test_Fail{Test Fail?}
-    Test_Fail --> |Yes| Rewrite_Code_By_Test_Error_Message
-    Test_Fail --> |No| End
+    Run_Test --> Test_Fail_Choice
+    state Test_Fail_Choice <<choice>>
+    Test_Fail_Choice --> Rewrite_Code_By_Test_Error_Message : Test Fail
+    Test_Fail_Choice --> End : Test Pass
     Rewrite_Code_By_Test_Error_Message --> Compile_Code
     End --> [*]
  ```   
