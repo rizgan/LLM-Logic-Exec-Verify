@@ -1,4 +1,5 @@
-// parse json string and return struct User(age, name)
+// parse json string and return struct User(age, name) and use serde = "1.0.128"
+// take 2 params and multiply and return result
 use serde::{Deserialize, Serialize};
 
 fn main() {
@@ -88,7 +89,7 @@ Result of compilation:
 {{{3}}}
 ```
 
-Rewrite dependencies to Cargo.toml file (only dependencies section without Rust language code without comments):
+Rewrite dependencies for fixing error to Cargo.toml file (only dependencies section without Rust language code without comments):
 ```toml
 [dependencies]
 "#;
@@ -102,6 +103,35 @@ Rust language code of this function:
 ```
 
 Write on Rust language code of test for this function (only test code without function implementation):
+```rust
+#[cfg(test)]
+mod tests {
+use super::*;
+
+#[test]
+"#;
+    let rewrite_test_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Test code for this function:
+```rust
+{{{2}}}
+```
+
+'''bash
+cargo test
+'''
+
+Result of testing:
+'''console
+{{{3}}}
+'''
+
+Rewrite test code for fixing error (only test code without function implementation):
 ```rust
 #[cfg(test)]
 mod tests {
@@ -166,16 +196,32 @@ use super::*;
             return;
         }
         if exit_code == 0 {
+            let mut test_rewrite_count = 0;
             let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
             let generation_test_result = generate(&generate_test_prompt);
-            let code_test = extract_code(&generation_test_result);
+            let mut code_test = extract_code(&generation_test_result);
             println!("{}", code_test);
             println!("===============");
             create_rust_project(&code, &code_test, &dependencies);
-            let (exit_code, _output) = execute("test");
-            if exit_code == 0 {
-                println!("{}\n{}", code, code_test);
-                return;
+            loop {
+                let (exit_code, output) = execute("test");
+                if exit_code == 0 {
+                    println!("{}\n{}", code, code_test);
+                    return;
+                } else {
+                    test_rewrite_count += 1;
+                    let rewrite_test_prompt = construct_prompt(rewrite_test_prompt_template, vec![&explanation, &code, &code_test, &output]);
+                    let rewrite_test_result = generate(&rewrite_test_prompt);
+                    code_test = extract_code(&rewrite_test_result);
+                    create_rust_project(&code, &code_test, &dependencies);
+                }
+
+                if test_rewrite_count > number_of_attempts {
+                    println!("Too many attempts to rewrite code. Exit.");
+                    println!("===============");
+                    println!("{}\n{}", code, code_test);
+                    return;
+                }
             }
         } else {
             code_rewrite_count += 1;
@@ -215,7 +261,7 @@ fn execute(command: &str) -> (i32, String) {
     println!("Output: {}", output);
     println!("===============");
 
-    (exit_code,output)
+    (exit_code,extract_error_message(&output))
 }
 fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     let sandbox_path = "sandbox";
@@ -334,6 +380,31 @@ fn extract_number(input: &str) -> i32 {
         }
     }
     1 // default value if no number found
+}
+
+fn extract_error_message(output: &str) -> String {
+    let mut error_lines = Vec::new();
+    let mut in_error_section = false;
+
+    for line in output.lines() {
+        if line.starts_with("error[") {
+            in_error_section = true;
+        }
+
+        if in_error_section {
+            error_lines.push(line);
+
+            if line.starts_with("For more information about this error") {
+                in_error_section = false;
+            }
+        }
+    }
+
+    let ret = error_lines.join("\n");
+    println!("===================");
+    println!("{}", ret);
+    println!("===================");
+    ret
 }
 
 
