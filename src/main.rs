@@ -1,4 +1,4 @@
-// ta
+// parse json string and return struct User(age, name)
 use serde::{Deserialize, Serialize};
 
 fn main() {
@@ -7,7 +7,7 @@ fn main() {
     let generate_code_prompt_template = r#"
 {{{0}}}
 
-Write on Rust language code of this function (only function body without example of usage):
+Write on Rust language code of this function (without example of usage like main function):
 ```rust
 fn solution(
 "#;
@@ -27,7 +27,7 @@ Result of compilation:
 {{{2}}}
 '''
 
-Rewrite code for fixing errors of this function (only function body without example of usage):
+Rewrite code for fixing errors of this function (without example of usage like main function):
 ```rust
 "#;
 
