@@ -172,15 +172,23 @@ use super::*;
             println!("{}", code_test);
             println!("===============");
             create_rust_project(&code, &code_test, &dependencies);
-            let (exit_code, output) = execute("test");
+            let (exit_code, _output) = execute("test");
             if exit_code == 0 {
                 println!("{}\n{}", code, code_test);
                 return;
-            } else {
-
             }
         } else {
             code_rewrite_count += 1;
+
+            let rewrite_dependencies_prompt = construct_prompt(rewrite_dependencies_prompt_template, vec![&explanation, &code, &dependencies, &output]);
+            let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
+            let dependencies_new = extract_code(&rewrite_dependencies_result);
+            create_rust_project(&code, "", &dependencies_new);
+            (exit_code, output) = execute("build");
+            if exit_code == 0 {
+                dependencies = dependencies_new;
+            }
+
             let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
             let rewrite_code_result = generate(&rewrite_code_prompt);
             code = extract_code(&rewrite_code_result);
