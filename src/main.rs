@@ -1,7 +1,9 @@
-// parse json string and return struct User(age, name)
+// ta
 use serde::{Deserialize, Serialize};
 
 fn main() {
+
+    let number_of_attempts = 10;
     let generate_code_prompt_template = r#"
 {{{0}}}
 
@@ -61,6 +63,37 @@ edition = "2018"
 "#;
 
 
+    let rewrite_dependencies_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Cargo.toml file
+```toml
+[package]
+name = "sandbox"
+version = "0.1.0"
+edition = "2018"
+
+{{{2}}}
+```
+
+cargo build
+
+Result of compilation:
+
+```console
+{{{3}}}
+```
+
+Rewrite dependencies to Cargo.toml file (only dependencies section without Rust language code without comments):
+```toml
+[dependencies]
+"#;
+
+
     let generate_test_prompt_template = r#"
 {{{0}}}
 Rust language code of this function:
@@ -99,13 +132,34 @@ use super::*;
         dependencies = extract_code(&build_dependencies_result);
         println!("{}", dependencies);
         println!("===============");
+        create_rust_project("", "", &dependencies);
+        let (mut exit_code, mut output) = execute("build");
+        let mut dependencies_rewrite_count = 0;
+        while exit_code != 0 || dependencies_rewrite_count == 0 {
+            if dependencies_rewrite_count > number_of_attempts {
+                println!("Too many attempts to rewrite dependencies. Exit.");
+                println!("===============");
+                println!("{}", dependencies);
+                return;
+            }
+            if exit_code == 0 {
+                break;
+            } else {
+                dependencies_rewrite_count += 1;
+                let rewrite_dependencies_prompt = construct_prompt(rewrite_dependencies_prompt_template, vec![&explanation, &code, &dependencies, &output]);
+                let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
+                dependencies = extract_code(&rewrite_dependencies_result);
+                create_rust_project("", "", &dependencies);
+                (exit_code, output) = execute("build");
+            }
+        }
     }
 
     create_rust_project(&code, "", &dependencies);
     let (mut exit_code, mut output) = execute("build");
     let mut code_rewrite_count = 0;
     while exit_code != 0 || code_rewrite_count == 0 {
-        if code_rewrite_count > 5 {
+        if code_rewrite_count > number_of_attempts {
             println!("Too many attempts to rewrite code. Exit.");
             println!("===============");
             println!("{}", code);
