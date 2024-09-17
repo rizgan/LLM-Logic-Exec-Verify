@@ -8,6 +8,26 @@ Write on Rust language code of this function (only function body without example
 ```rust
 fn solution(
 "#;
+
+let rewrite_code_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+Try to compile this code:
+'''bash
+cargo build
+'''
+Result of compilation:
+'''console
+{{{2}}}
+'''
+
+Rewrite code for fixing errors of this function (only function body without example of usage):
+```rust
+"#;
+
     let generate_test_prompt_template = r#"
 {{{0}}}
 Rust language code of this function:
@@ -32,23 +52,39 @@ use super::*;
     let generation_code_result = generate(&generate_code_prompt);
     println!("{}", generation_code_result);
     println!("===============");
-    let code =  extract_code(&generation_code_result);
+    let mut code =  extract_code(&generation_code_result);
     println!("{}",code);
     println!("===============");
     create_rust_project(&code, "");
-    let (exit_code, output) = execute("build");
-    if exit_code == 0 {
-        let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
-        let generation_test_result = generate(&generate_test_prompt);
-        let code_test = extract_code(&generation_test_result);
-        println!("{}", code_test);
-        println!("===============");
-        create_rust_project(&code, &code_test);
-        let (exit_code, output) = execute("test");
+    let (mut exit_code, mut output) = execute("build");
+    let mut code_rewrite_count = 0;
+    while exit_code != 0 {
+        if code_rewrite_count > 3 {
+            println!("Too many attempts to rewrite code. Exit.");
+            println!("===============");
+            println!("{}", code);
+            return;
+        }
         if exit_code == 0 {
-          println!("{}\n{}", code, code_test);
-        } else {
+            let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
+            let generation_test_result = generate(&generate_test_prompt);
+            let code_test = extract_code(&generation_test_result);
+            println!("{}", code_test);
+            println!("===============");
+            create_rust_project(&code, &code_test);
+            let (exit_code, output) = execute("test");
+            if exit_code == 0 {
+                println!("{}\n{}", code, code_test);
+            } else {
 
+            }
+        } else {
+            code_rewrite_count += 1;
+            let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
+            let rewrite_code_result = generate(&rewrite_code_prompt);
+            code = extract_code(&rewrite_code_result);
+            create_rust_project(&code, "");
+            (exit_code, output) = execute("build");
         }
     }
 
