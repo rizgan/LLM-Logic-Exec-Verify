@@ -32,8 +32,8 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/lmm-logic-exec-verfy.git
-cd lmm-logic-exec-verfy
+git https://github.com/evgenyigumnov/LLM-Logic-Exec-Verify.git
+cd LLM-Logic-Exec-Verify
 ```
 
 ## Usage
