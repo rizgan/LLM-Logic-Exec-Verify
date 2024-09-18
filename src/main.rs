@@ -214,7 +214,7 @@ Answer(just number):
 
     // Проверка компиляции кода
     create_rust_project(&code, "", "");
-    let (mut exit_code, mut output) = execute("build");
+    let (mut exit_code, mut output) = execute("build", &mut cache);
 
     'code_generation: loop {
         if code_attempts >= number_of_attempts {
@@ -261,7 +261,7 @@ Answer(just number):
                     // Проверка компиляции кода с зависимостями
                     create_rust_project(&code, "", &dependencies);
                 }
-                let (exit_code_immut, output_immut) = execute("build");
+                let (exit_code_immut, output_immut) = execute("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
                 if exit_code == 0 {
@@ -291,7 +291,7 @@ Answer(just number):
                         }
                         // Генерация тестов
 
-                        let (exit_code_immut, output_immut) = execute("test");
+                        let (exit_code_immut, output_immut) = execute("test", &mut cache);
                         exit_code = exit_code_immut;
                         output = output_immut;
                         if exit_code == 0 {
@@ -355,7 +355,7 @@ Answer(just number):
                 // dependencies = "".to_string();
             }
             create_rust_project(&code, "", &dependencies);
-            let (exit_code_immut, output_immut) = execute("build");
+            let (exit_code_immut, output_immut) = execute("build", &mut cache);
             if exit_code_immut != 0 {
                 output = output_immut;
 
@@ -367,7 +367,7 @@ Answer(just number):
                 let rewrite_code_result = generate(&rewrite_code_prompt, &mut cache);
                 code = extract_code(&rewrite_code_result);
                 create_rust_project(&code, "", &dependencies);
-                let (exit_code_immut, output_immut) = execute("build");
+                let (exit_code_immut, output_immut) = execute("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
             }
@@ -377,18 +377,50 @@ Answer(just number):
 }
 
 
-fn execute(command: &str) -> (i32, String) {
+fn execute(command: &str, cache: &mut Cache) -> (i32, String) {
     println!("Run: cargo {}", command);
-    let output = std::process::Command::new("cargo")
-        .arg(command)
-        .current_dir("sandbox")
-        .output()
-        .unwrap();
-    let exit_code = output.status.code().unwrap();
-    let std_out = String::from_utf8(output.stdout).unwrap();
-    let std_err = String::from_utf8(output.stderr).unwrap();
+    let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
+        std::fs::read_to_string("sandbox/src/main.rs").unwrap()
+    } else {
+        "".to_string()
+    };
+    let dependencies = if std::path::Path::new("sandbox/Cargo.toml").exists() {
+        std::fs::read_to_string("sandbox/Cargo.toml").unwrap()
+    } else {
+        "".to_string()
+    };
+    let src= format!("{}\n{}", dependencies, code);
+
+    let key = format!("{}{}", command, src);
+    let result_str_opt = cache.get(&key);
+    let result_str = match result_str_opt {
+        None => {
+
+            let output = std::process::Command::new("cargo")
+                .arg(command)
+                .current_dir("sandbox")
+                .output()
+                .unwrap();
+            let exit_code = output.status.code().unwrap();
+            let std_out = String::from_utf8(output.stdout).unwrap();
+            let std_err = String::from_utf8(output.stderr).unwrap();
+            let output = std_err + &std_out;
+            let tuple: (i32, String) = (exit_code, output);
+            let json_str = serde_json::to_string(&tuple).unwrap();
+            cache.set(key, json_str.clone());
+            json_str
+        }
+        Some(result) => {
+            result.to_string()
+        }
+    };
+    let parsed: (i32, String) = serde_json::from_str(&result_str).unwrap();
+
+    let exit_code = parsed.0;
+    let output = parsed.1;
+
+
     println!("Exit code: {}", exit_code);
-    let output = std_err + &std_out ;
     if DEBUG {
         println!("Output: {}", output);
     }
@@ -524,7 +556,7 @@ fn generate(prompt: &str, cache: &mut Cache) -> String {
             response.response
         }
         Some(result) => {
-            return result.to_string();
+            result.to_string()
         }
     };
 
