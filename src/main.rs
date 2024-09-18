@@ -1,4 +1,3 @@
-use std::process::ExitCode;
 // create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
@@ -155,11 +154,7 @@ fn test_solution(
     let generate_code_prompt = construct_prompt(generate_code_prompt_template, vec![&explanation]);
     println!("===============");
     let generation_code_result = generate(&generate_code_prompt);
-    println!("{}", generation_code_result);
-    println!("===============");
     let mut code =  extract_code(&generation_code_result);
-    println!("{}",code);
-    println!("===============");
 
     let mut dependencies: String = "".to_string();
     let build_dependencies_req_prompt = construct_prompt(build_dependencies_req_prompt_template, vec![&explanation, &code]);
@@ -340,12 +335,14 @@ fn extract_code(input: &str) -> String {
 
 
 fn generate(prompt: &str) -> String {
+     let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
         model: "gemma2".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
             num_predict: 500,
+            stop: stop
         },
     };
     println!("Request: {}", request.prompt);
@@ -381,6 +378,7 @@ struct OllamaRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct OllamaOptions {
     num_predict: i32,
+    stop: Vec<String>,
 }
 
 
