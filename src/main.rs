@@ -237,7 +237,7 @@ Answer(just number):
                     continue 'code_generation;
                 }
                 dependencies_attempts += 1;
-                if exit_code == 0 &&  dependencies_attempts == 0  {
+                if exit_code == 0 &&  (dependencies_attempts == 1 || dependencies == "")  {
 
                     // Проверка необходимости зависимостей
                     let build_dependencies_req_prompt = construct_prompt(
@@ -272,7 +272,7 @@ Answer(just number):
                         if test_attempts >= number_of_attempts {
                             // Возврат к генерации зависимостей
                             dependencies_attempts = 0;
-                            exit_code = 1;
+                            exit_code = 0;
                             continue 'dependencies_generation;
                         }
                         test_attempts += 1;
@@ -370,6 +370,8 @@ Answer(just number):
                 let (exit_code_immut, output_immut) = execute("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
+            } else {
+                exit_code = 0;
             }
         }
     }
