@@ -156,6 +156,33 @@ fn test_solution(
 "#;
 
 
+    let rewrite_code_req_prompt_template = r#"
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Test code for this function:
+```rust
+{{{2}}}
+```
+
+'''bash
+cargo test
+'''
+
+Result of testing:
+'''console
+{{{3}}}
+'''
+
+Where are current erros placed ?
+1. In code. In 'solution' function
+2. In test. In 'test_solution' function
+Anser(just number):
+"#;
+
 
     let number_of_attempts = 3; // Максимальное количество попыток на каждом уровне
 
@@ -267,13 +294,28 @@ fn test_solution(
                             println!("Finished");
                             return;
                         } else {
-                            // Ошибка в тестах, попытка исправить
-                            let rewrite_test_prompt = construct_prompt(
-                                rewrite_test_prompt_template,
+
+                            let rewrite_code_req_prompt_template_prompt = construct_prompt(
+                                rewrite_code_req_prompt_template,
                                 vec![&explanation, &code, &code_test, &output],
                             );
-                            let rewrite_test_result = generate(&rewrite_test_prompt);
-                            code_test = extract_code(&rewrite_test_result);
+                            let rewrite_code_req_result = generate(&rewrite_code_req_prompt_template_prompt);
+                            if extract_number(&rewrite_code_req_result) == 1 {
+                                // Ошибка в коде, попытка исправить
+                                let rewrite_code_prompt = construct_prompt(
+                                    rewrite_code_prompt_template,
+                                    vec![&explanation, &code, &output],
+                                );
+                                let rewrite_code_result = generate(&rewrite_code_prompt);
+                                code = extract_code(&rewrite_code_result);
+                            } else {
+                                let rewrite_test_prompt = construct_prompt(
+                                    rewrite_test_prompt_template,
+                                    vec![&explanation, &code, &code_test, &output],
+                                );
+                                let rewrite_test_result = generate(&rewrite_test_prompt);
+                                code_test = extract_code(&rewrite_test_result);
+                            }
                         }
                     }
                 } else {
