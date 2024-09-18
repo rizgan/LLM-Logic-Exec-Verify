@@ -56,7 +56,7 @@ Result of compilation:
 For this function is required some dependencies in Cargo.toml file?
 1. Some dependencies are required
 2. All dependencies are already included in standard library
-Anser(just number):"#;
+Answer(just number):"#;
 
 
     let build_dependencies_prompt_template = r#"
@@ -180,7 +180,7 @@ Result of testing:
 Where are current erros placed ?
 1. In code. In 'solution' function
 2. In test. In 'test_solution' function
-Anser(just number):
+Answer(just number):
 "#;
 
 
@@ -231,7 +231,7 @@ Anser(just number):
                     continue 'code_generation;
                 }
                 dependencies_attempts += 1;
-                if exit_code == 0 {
+                if exit_code == 0 &&  dependencies_attempts == 0  {
 
                     // Проверка необходимости зависимостей
                     let build_dependencies_req_prompt = construct_prompt(
