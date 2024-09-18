@@ -9,7 +9,8 @@ const DEBUG: bool = false;
 
 fn main() {
 
-    let number_of_attempts = 10;
+    let number_of_attempts = 4;
+    let number_of_attempts_test= 1;
     let generate_code_prompt_template = r#"
 {{{0}}}
 
@@ -210,10 +211,17 @@ fn test_solution(
                     return;
                 } else {
                     test_rewrite_count += 1;
-                    let rewrite_test_prompt = construct_prompt(rewrite_test_prompt_template, vec![&explanation, &code, &code_test, &output]);
-                    let rewrite_test_result = generate(&rewrite_test_prompt);
-                    code_test = extract_code(&rewrite_test_result);
-                    create_rust_project(&code, &code_test, &dependencies);
+                    if test_rewrite_count > number_of_attempts_test {
+                        let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
+                        let rewrite_code_result = generate(&rewrite_code_prompt);
+                        code = extract_code(&rewrite_code_result);
+                        create_rust_project(&code, &code_test, &dependencies);
+                    } else {
+                        let rewrite_test_prompt = construct_prompt(rewrite_test_prompt_template, vec![&explanation, &code, &code_test, &output]);
+                        let rewrite_test_result = generate(&rewrite_test_prompt);
+                        code_test = extract_code(&rewrite_test_result);
+                        create_rust_project(&code, &code_test, &dependencies);
+                    }
                 }
 
                 if test_rewrite_count > number_of_attempts {
@@ -268,18 +276,18 @@ fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     let code_str = if code == "" {
         ""
     } else {
-        "code"
+        "'code'"
     };
     let test_str = if test == "" {
         ""
     } else {
-        "and test"
+        "'test'"
     };
 
     let dependencies_str = if dependencies == "" {
         ""
     } else {
-        "and dependencies"
+        "'dependencies'"
     };
 
     println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
