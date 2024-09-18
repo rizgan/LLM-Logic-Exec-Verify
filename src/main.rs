@@ -1,6 +1,6 @@
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
-// parse json string and return struct User (age, name) and use PartialEq for User struct
+// parse json string and return struct User (age, name)
 
 mod cache;
 
@@ -526,7 +526,7 @@ fn extract_code(input: &str) -> String {
 fn generate(prompt: &str, cache: &mut Cache) -> String {
     let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
-        model: "gemma2".to_string(),
+        model: "gemma2:27b".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
