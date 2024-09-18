@@ -29,7 +29,8 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 ```bash
 ollama run gemma2:27b
 ```
-
+Afret downloading the model, you can say "hello" to the model to check if it is working correctly. 
+After that, you can use type "Ctrl+D" to exit the model.
 ### Clone the Repository
 
 ```bash
@@ -91,6 +92,14 @@ TestsPass --> [*]
 
    Once the code compiles and all tests pass, the final code and tests will be displayed.
 
+
+## Example of queries for code generation
+
+```take 2 params and multiply and return result```
+
+```take 1 parameter multiply by random number and return tuple with  result and random number```
+
+```parse json string and return struct User (age, name)```
 
 ## Contributing
 
