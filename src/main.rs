@@ -1,7 +1,6 @@
-// create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
-//  parse json string and return struct User (age, name)
+// parse json string and return struct User (age, name) and use PartialEq for User
 use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -266,6 +265,26 @@ fn execute(command: &str) -> (i32, String) {
     (exit_code,extract_error_message(&output, exit_code))
 }
 fn create_rust_project(code: &str, test: &str, dependencies: &str) {
+    let code_str = if code == "" {
+        ""
+    } else {
+        "code"
+    };
+    let test_str = if test == "" {
+        ""
+    } else {
+        "and test"
+    };
+
+    let dependencies_str = if dependencies == "" {
+        ""
+    } else {
+        "and dependencies"
+    };
+
+    println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
+    println!("====================");
+
     let sandbox_path = "sandbox";
     let src_path = format!("{}/src", sandbox_path);
     let main_path = format!("{}/src/main.rs", sandbox_path);
