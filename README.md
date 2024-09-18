@@ -25,6 +25,10 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 
 - **Rust**: Ensure you have Rust installed. You can install it from [here](https://www.rust-lang.org/tools/install).
 - **Ollama**: Required for LLM interactions. Install from [Ollama's official site](https://ollama.ai/).
+- **Download model:** 
+```bash
+ollama run gemma2:27b
+```
 
 ### Clone the Repository
 
@@ -61,12 +65,6 @@ cd LLM-Logic-Exec-Verify
     - Generate tests for the function.
     - Run the tests and iteratively fix any errors.
 
-4. **Completion**
-
-   Once the code compiles and all tests pass, the final code and tests will be displayed.
-
-## State Diagram
-
 ```mermaid
 stateDiagram
 [*] --> Start
@@ -88,6 +86,11 @@ RewriteCode --> CompileCode
 RewriteTests --> RunTests
 TestsPass --> [*]
 ```
+
+4. **Completion**
+
+   Once the code compiles and all tests pass, the final code and tests will be displayed.
+
 
 ## Contributing
 
