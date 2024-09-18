@@ -26,7 +26,6 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 ### Prerequisites
 
 - **Rust**: Ensure you have Rust installed. You can install it from [here](https://www.rust-lang.org/tools/install).
-- **Cargo**: Comes with Rust installation.
 - **Ollama**: Required for LLM interactions. Install from [Ollama's official site](https://ollama.ai/).
 
 ### Clone the Repository
@@ -96,7 +95,3 @@ TestsPass --> [*]
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements.
 
-## Acknowledgments
-
-- Thanks to the open-source community for their invaluable tools and resources.
-- Inspired by advancements in AI and LLM integrations.
