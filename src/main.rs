@@ -1,7 +1,8 @@
 // create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
-// TODO extract code from prompt some times return empty ""
+use std::time::Duration;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
 fn main() {
@@ -111,6 +112,7 @@ mod tests {
 use super::*;
 
 #[test]
+fn test_solution(
 "#;
     let rewrite_test_prompt_template = r#"
 {{{0}}}
@@ -140,6 +142,7 @@ mod tests {
 use super::*;
 
 #[test]
+fn test_solution(
 "#;
 
 
@@ -328,7 +331,7 @@ fn extract_code(input: &str) -> String {
 
 fn generate(prompt: &str) -> String {
     let request = OllamaRequest {
-        model: "gemma2:2b".to_string(),
+        model: "gemma2".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
@@ -337,8 +340,12 @@ fn generate(prompt: &str) -> String {
     };
     println!("Request: {}", request.prompt);
     println!("===============");
+    let client = Client::builder()
+        .timeout(Duration::from_secs(120))
+        .build()
+        .unwrap();
 
-    let response = reqwest::blocking::Client::new()
+    let response = client
         .post("http://127.0.0.1:11434/api/generate")
         .json(&request)
         .send()
@@ -412,7 +419,7 @@ fn extract_error_message(output: &str) -> String {
     }
 
     let ret = error_lines.join("\n");
-    println!("===================");
+    println!("===================Errors:");
     println!("{}", ret);
     println!("===================");
     ret
