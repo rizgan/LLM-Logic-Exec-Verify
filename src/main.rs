@@ -209,12 +209,12 @@ Answer(just number):
         vec![&explanation],
     );
     println!("===============");
-    let generation_code_result = generate(&generate_code_prompt, &mut cache);
+    let generation_code_result = llm_request(&generate_code_prompt, &mut cache);
     code = extract_code(&generation_code_result);
 
 
     create_rust_project(&code, "", "");
-    let (mut exit_code, mut output) = execute("build", &mut cache);
+    let (mut exit_code, mut output) = cargo("build", &mut cache);
 
     'code_generation: loop {
         if code_attempts >= number_of_attempts {
@@ -244,7 +244,7 @@ Answer(just number):
                         build_dependencies_req_prompt_template,
                         vec![&explanation, &code, &output],
                     );
-                    let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
+                    let build_dependencies_req_result = llm_request(&build_dependencies_req_prompt, &mut cache);
                     let build_dependencies_req = build_dependencies_req_result.trim();
                     if extract_number(build_dependencies_req) == 1 {
 
@@ -252,14 +252,14 @@ Answer(just number):
                             build_dependencies_prompt_template,
                             vec![&explanation, &code],
                         );
-                        let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
+                        let build_dependencies_result = llm_request(&build_dependencies_prompt, &mut cache);
                         dependencies = extract_code(&build_dependencies_result);
                     }
 
 
                     create_rust_project(&code, "", &dependencies);
                 }
-                let (exit_code_immut, output_immut) = execute("build", &mut cache);
+                let (exit_code_immut, output_immut) = cargo("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
                 if exit_code == 0 {
@@ -279,14 +279,14 @@ Answer(just number):
                                 generate_test_prompt_template,
                                 vec![&explanation, &code],
                             );
-                            let generation_test_result = generate(&generate_test_prompt, &mut cache);
+                            let generation_test_result = llm_request(&generate_test_prompt, &mut cache);
                             code_test = extract_code(&generation_test_result);
 
                             create_rust_project(&code, &code_test, &dependencies);
                         }
 
 
-                        let (exit_code_immut, output_immut) = execute("test", &mut cache);
+                        let (exit_code_immut, output_immut) = cargo("test", &mut cache);
                         exit_code = exit_code_immut;
                         output = output_immut;
                         if exit_code == 0 {
@@ -299,20 +299,20 @@ Answer(just number):
                                 rewrite_code_req_prompt_template,
                                 vec![&explanation, &code, &code_test, &output],
                             );
-                            let rewrite_code_req_result = generate(&rewrite_code_req_prompt_template_prompt, &mut cache);
+                            let rewrite_code_req_result = llm_request(&rewrite_code_req_prompt_template_prompt, &mut cache);
                             if extract_number(&rewrite_code_req_result) == 1 {
                                 let rewrite_code_prompt = construct_prompt(
                                     rewrite_code_prompt_template,
                                     vec![&explanation, &code, &output],
                                 );
-                                let rewrite_code_result = generate(&rewrite_code_prompt, &mut cache);
+                                let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
                                 code = extract_code(&rewrite_code_result);
                             } else {
                                 let rewrite_test_prompt = construct_prompt(
                                     rewrite_test_prompt_template,
                                     vec![&explanation, &code, &code_test, &output],
                                 );
-                                let rewrite_test_result = generate(&rewrite_test_prompt, &mut cache);
+                                let rewrite_test_result = llm_request(&rewrite_test_prompt, &mut cache);
                                 code_test = extract_code(&rewrite_test_result);
                             }
                         }
@@ -322,7 +322,7 @@ Answer(just number):
                         rewrite_dependencies_prompt_template,
                         vec![&explanation, &code, &dependencies, &output],
                     );
-                    let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt, &mut cache);
+                    let rewrite_dependencies_result = llm_request(&rewrite_dependencies_prompt, &mut cache);
                     dependencies = extract_code(&rewrite_dependencies_result);
                 }
             }
@@ -331,18 +331,18 @@ Answer(just number):
                 build_dependencies_req_prompt_template,
                 vec![&explanation, &code, &output],
             );
-            let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
+            let build_dependencies_req_result = llm_request(&build_dependencies_req_prompt, &mut cache);
             let build_dependencies_req = build_dependencies_req_result.trim();
             if extract_number(build_dependencies_req) == 1 {
                 let build_dependencies_prompt = construct_prompt(
                     build_dependencies_prompt_template,
                     vec![&explanation, &code],
                 );
-                let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
+                let build_dependencies_result = llm_request(&build_dependencies_prompt, &mut cache);
                 dependencies = extract_code(&build_dependencies_result);
             }
             create_rust_project(&code, "", &dependencies);
-            let (exit_code_immut, output_immut) = execute("build", &mut cache);
+            let (exit_code_immut, output_immut) = cargo("build", &mut cache);
             if exit_code_immut != 0 {
                 output = output_immut;
 
@@ -350,10 +350,10 @@ Answer(just number):
                     rewrite_code_prompt_template,
                     vec![&explanation, &code, &output],
                 );
-                let rewrite_code_result = generate(&rewrite_code_prompt, &mut cache);
+                let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
                 code = extract_code(&rewrite_code_result);
                 create_rust_project(&code, "", &dependencies);
-                let (exit_code_immut, output_immut) = execute("build", &mut cache);
+                let (exit_code_immut, output_immut) = cargo("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
             } else {
@@ -365,7 +365,7 @@ Answer(just number):
 }
 
 
-fn execute(command: &str, cache: &mut Cache) -> (i32, String) {
+fn cargo(command: &str, cache: &mut Cache) -> (i32, String) {
     println!("Run: cargo {}", command);
     let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
         std::fs::read_to_string("sandbox/src/main.rs").unwrap()
@@ -509,7 +509,7 @@ fn extract_code(input: &str) -> String {
 }
 
 
-fn generate(prompt: &str, cache: &mut Cache) -> String {
+fn llm_request(prompt: &str, cache: &mut Cache) -> String {
     let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
         model: "gemma2:27b".to_string(),
