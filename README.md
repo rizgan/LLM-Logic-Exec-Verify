@@ -104,10 +104,6 @@ TestsPass --> [*]
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
 ## Acknowledgments
 
 - Thanks to the open-source community for their invaluable tools and resources.
