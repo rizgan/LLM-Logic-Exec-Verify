@@ -1,6 +1,6 @@
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
-// parse json string and return struct User (age, name) and use PartialEq for User
+// parse json string and return struct User (age, name)
 use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -44,9 +44,18 @@ Rust language code of this function:
 {{{1}}}
 ```
 
-For this function is not required some dependencies in Cargo.toml file?
-1. Yes
-2. No
+```bash
+cargo build
+```
+
+Result of compilation:
+```console
+{{{2}}}
+```
+
+For this function is required some dependencies in Cargo.toml file?
+1. Some dependencies are required
+2. All dependencies are already included in standard library
 Anser(just number):"#;
 
 
@@ -155,10 +164,9 @@ fn test_solution(
     std::io::stdin().read_line(&mut explanation).unwrap();
 
     let mut code_attempts = 0;
-    let mut dependencies_attempts = 0;
-    let mut test_attempts = 0;
-
-    let mut code = "".to_string();
+    let mut dependencies_attempts;
+    let mut test_attempts;
+    let mut code;
     let mut dependencies = "".to_string();
     let mut code_test = "".to_string();
 
@@ -201,7 +209,7 @@ fn test_solution(
                     // Проверка необходимости зависимостей
                     let build_dependencies_req_prompt = construct_prompt(
                         build_dependencies_req_prompt_template,
-                        vec![&explanation, &code],
+                        vec![&explanation, &code, &output],
                     );
                     let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
                     let build_dependencies_req = build_dependencies_req_result.trim();
@@ -214,7 +222,7 @@ fn test_solution(
                         let build_dependencies_result = generate(&build_dependencies_prompt);
                         dependencies = extract_code(&build_dependencies_result);
                     } else {
-                        dependencies = "".to_string();
+                        // dependencies = "".to_string();
                     }
 
                     // Проверка компиляции кода с зависимостями
@@ -227,7 +235,7 @@ fn test_solution(
                     // Зависимости успешно скомпилированы
                     test_attempts = 0;
 
-                    'test_generation: loop {
+                    loop {
                         if test_attempts >= number_of_attempts {
                             // Возврат к генерации зависимостей
                             dependencies_attempts = 0;
@@ -279,6 +287,29 @@ fn test_solution(
                 }
             }
         } else {
+
+            // Проверка необходимости зависимостей
+            let build_dependencies_req_prompt = construct_prompt(
+                build_dependencies_req_prompt_template,
+                vec![&explanation, &code, &output],
+            );
+            let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
+            let build_dependencies_req = build_dependencies_req_result.trim();
+            if extract_number(build_dependencies_req) == 1 {
+                // Генерация зависимостей
+                let build_dependencies_prompt = construct_prompt(
+                    build_dependencies_prompt_template,
+                    vec![&explanation, &code],
+                );
+                let build_dependencies_result = generate(&build_dependencies_prompt);
+                dependencies = extract_code(&build_dependencies_result);
+            } else {
+                // dependencies = "".to_string();
+            }
+            create_rust_project(&code, "", &dependencies);
+            let (exit_code_immut, output_immut) = execute("build");
+            output = output_immut;
+
             // Ошибка в коде, попытка исправить
             let rewrite_code_prompt = construct_prompt(
                 rewrite_code_prompt_template,
@@ -286,6 +317,10 @@ fn test_solution(
             );
             let rewrite_code_result = generate(&rewrite_code_prompt);
             code = extract_code(&rewrite_code_result);
+            create_rust_project(&code, "", &dependencies);
+            let (exit_code_immut, output_immut) = execute("build");
+            exit_code = exit_code_immut;
+            output = output_immut;
         }
     }
 
@@ -406,7 +441,7 @@ fn extract_code(input: &str) -> String {
 fn generate(prompt: &str) -> String {
      let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
-        model: "gemma2:2b".to_string(),
+        model: "gemma2".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
