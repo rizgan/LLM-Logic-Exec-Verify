@@ -9,8 +9,6 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 - [Usage](#usage)
 - [State Diagram](#state-diagram)
 - [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
 
 ## Features
 
