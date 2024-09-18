@@ -1,15 +1,16 @@
+```mermaid
 stateDiagram-v2
-[*] --> Start
-Start --> Ask_Explanation
-Ask_Explanation --> Generate_Code
-Generate_Code --> Increment_Code_Attempts
-Increment_Code_Attempts --> Code_Attempts_Exceeded{Code attempts >= Max?}
-Code_Attempts_Exceeded --> |Yes| Exit
-Code_Attempts_Exceeded --> |No| Create_Project
-Create_Project --> Compile_Code
-Compile_Code --> Compilation_Success{Compilation success?}
-Compilation_Success --> |Yes| Dependencies_Loop
-Compilation_Success --> |No| Check_Dependencies_Needed
+    [*] --> Start
+    Start --> Ask_Explanation
+    Ask_Explanation --> Generate_Code
+    Generate_Code --> Increment_Code_Attempts
+    Increment_Code_Attempts --> Code_Attempts_Exceeded{Code attempts >= Max?}
+    Code_Attempts_Exceeded --> |Yes| Exit
+    Code_Attempts_Exceeded --> |No| Create_Project
+    Create_Project --> Compile_Code
+    Compile_Code --> Compilation_Success{Compilation success?}
+    Compilation_Success --> |Yes| Dependencies_Loop
+    Compilation_Success --> |No| Check_Dependencies_Needed
 
     Check_Dependencies_Needed --> Dependencies_Needed{Dependencies needed?}
     Dependencies_Needed --> |Yes| Generate_Dependencies
@@ -46,3 +47,4 @@ Compilation_Success --> |No| Check_Dependencies_Needed
 
     End --> [*]
     Exit --> [*]
+ ```   
