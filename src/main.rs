@@ -409,7 +409,7 @@ fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     };
 
     println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
-    println!("{}\n{}\n{}", code, dependencies, test);
+    println!("{}\n{}\n{}", dependencies, code, test);
     println!("====================");
 
     let sandbox_path = "sandbox";
