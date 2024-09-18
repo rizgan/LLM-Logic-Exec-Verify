@@ -1,13 +1,19 @@
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
 // parse json string and return struct User (age, name)
+
+mod cache;
+
 use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use crate::cache::Cache;
 
 const DEBUG: bool = false;
 
 fn main() {
+
+    let mut cache = cache::Cache::new();
 
     let generate_code_prompt_template = r#"
 {{{0}}}
@@ -203,7 +209,7 @@ Answer(just number):
         vec![&explanation],
     );
     println!("===============");
-    let generation_code_result = generate(&generate_code_prompt);
+    let generation_code_result = generate(&generate_code_prompt, &mut cache);
     code = extract_code(&generation_code_result);
 
     // Проверка компиляции кода
@@ -238,7 +244,7 @@ Answer(just number):
                         build_dependencies_req_prompt_template,
                         vec![&explanation, &code, &output],
                     );
-                    let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
+                    let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
                     let build_dependencies_req = build_dependencies_req_result.trim();
                     if extract_number(build_dependencies_req) == 1 {
                         // Генерация зависимостей
@@ -246,7 +252,7 @@ Answer(just number):
                             build_dependencies_prompt_template,
                             vec![&explanation, &code],
                         );
-                        let build_dependencies_result = generate(&build_dependencies_prompt);
+                        let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
                         dependencies = extract_code(&build_dependencies_result);
                     } else {
                         // dependencies = "".to_string();
@@ -277,7 +283,7 @@ Answer(just number):
                                 generate_test_prompt_template,
                                 vec![&explanation, &code],
                             );
-                            let generation_test_result = generate(&generate_test_prompt);
+                            let generation_test_result = generate(&generate_test_prompt, &mut cache);
                             code_test = extract_code(&generation_test_result);
 
                             // Проверка прохождения тестов
@@ -299,21 +305,21 @@ Answer(just number):
                                 rewrite_code_req_prompt_template,
                                 vec![&explanation, &code, &code_test, &output],
                             );
-                            let rewrite_code_req_result = generate(&rewrite_code_req_prompt_template_prompt);
+                            let rewrite_code_req_result = generate(&rewrite_code_req_prompt_template_prompt, &mut cache);
                             if extract_number(&rewrite_code_req_result) == 1 {
                                 // Ошибка в коде, попытка исправить
                                 let rewrite_code_prompt = construct_prompt(
                                     rewrite_code_prompt_template,
                                     vec![&explanation, &code, &output],
                                 );
-                                let rewrite_code_result = generate(&rewrite_code_prompt);
+                                let rewrite_code_result = generate(&rewrite_code_prompt, &mut cache);
                                 code = extract_code(&rewrite_code_result);
                             } else {
                                 let rewrite_test_prompt = construct_prompt(
                                     rewrite_test_prompt_template,
                                     vec![&explanation, &code, &code_test, &output],
                                 );
-                                let rewrite_test_result = generate(&rewrite_test_prompt);
+                                let rewrite_test_result = generate(&rewrite_test_prompt, &mut cache);
                                 code_test = extract_code(&rewrite_test_result);
                             }
                         }
@@ -324,7 +330,7 @@ Answer(just number):
                         rewrite_dependencies_prompt_template,
                         vec![&explanation, &code, &dependencies, &output],
                     );
-                    let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
+                    let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt, &mut cache);
                     dependencies = extract_code(&rewrite_dependencies_result);
                 }
             }
@@ -335,7 +341,7 @@ Answer(just number):
                 build_dependencies_req_prompt_template,
                 vec![&explanation, &code, &output],
             );
-            let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
+            let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
             let build_dependencies_req = build_dependencies_req_result.trim();
             if extract_number(build_dependencies_req) == 1 {
                 // Генерация зависимостей
@@ -343,7 +349,7 @@ Answer(just number):
                     build_dependencies_prompt_template,
                     vec![&explanation, &code],
                 );
-                let build_dependencies_result = generate(&build_dependencies_prompt);
+                let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
                 dependencies = extract_code(&build_dependencies_result);
             } else {
                 // dependencies = "".to_string();
@@ -358,7 +364,7 @@ Answer(just number):
                     rewrite_code_prompt_template,
                     vec![&explanation, &code, &output],
                 );
-                let rewrite_code_result = generate(&rewrite_code_prompt);
+                let rewrite_code_result = generate(&rewrite_code_prompt, &mut cache);
                 code = extract_code(&rewrite_code_result);
                 create_rust_project(&code, "", &dependencies);
                 let (exit_code_immut, output_immut) = execute("build");
@@ -483,8 +489,8 @@ fn extract_code(input: &str) -> String {
 }
 
 
-fn generate(prompt: &str) -> String {
-     let stop = vec!["**Explanation".to_string()];
+fn generate(prompt: &str, cache: &mut Cache) -> String {
+    let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
         model: "gemma2".to_string(),
         prompt: prompt.to_string(),
@@ -494,26 +500,37 @@ fn generate(prompt: &str) -> String {
             stop: stop
         },
     };
+
+    let request_str = serde_json::to_string(&request).unwrap();
     println!("Request: {}", request.prompt);
     println!("===============");
-    let client = Client::builder()
-        .timeout(Duration::from_secs(60*5))
-        .build()
-        .unwrap();
 
-    let response = client
-        .post("http://127.0.0.1:11434/api/generate")
-        .json(&request)
-        .send()
-        .unwrap()
-        .json::<OllamaResponse>()
-        .unwrap();
+    let response_opt = cache.get(&request_str);
+    let response = match response_opt {
+        None => {
+            let client = Client::builder()
+                .timeout(Duration::from_secs(60*5))
+                .build()
+                .unwrap();
 
-    // print request and response
-    println!("Response: {}", response.response);
+            let response = client
+                .post("http://127.0.0.1:11434/api/generate")
+                .json(&request)
+                .send()
+                .unwrap()
+                .json::<OllamaResponse>()
+                .unwrap();
+            cache.set(request_str.clone(), response.response.clone());
+            response.response
+        }
+        Some(result) => {
+            return result.to_string();
+        }
+    };
+
+    println!("Response: {}", response);
     println!("===============");
-
-    response.response
+    response
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
