@@ -153,6 +153,7 @@ fn test_solution(
     let mut explanation = String::new();
     std::io::stdin().read_line(&mut explanation).unwrap();
     let generate_code_prompt = construct_prompt(generate_code_prompt_template, vec![&explanation]);
+    println!("===============");
     let generation_code_result = generate(&generate_code_prompt);
     println!("{}", generation_code_result);
     println!("===============");
@@ -168,8 +169,6 @@ fn test_solution(
         let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
         let build_dependencies_result = generate(&build_dependencies_prompt);
         dependencies = extract_code(&build_dependencies_result);
-        println!("{}", dependencies);
-        println!("===============");
         create_rust_project("", "", &dependencies);
         let (mut exit_code, mut output) = execute("build");
         let mut dependencies_rewrite_count = 0;
@@ -177,7 +176,6 @@ fn test_solution(
             if dependencies_rewrite_count > number_of_attempts {
                 println!("Too many attempts to rewrite dependencies. Exit.");
                 println!("===============");
-                println!("{}", dependencies);
                 return;
             }
             if exit_code == 0 {
@@ -200,7 +198,6 @@ fn test_solution(
         if code_rewrite_count > number_of_attempts {
             println!("Too many attempts to rewrite code. Exit.");
             println!("===============");
-            println!("{}", code);
             return;
         }
         if exit_code == 0 {
@@ -208,13 +205,12 @@ fn test_solution(
             let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
             let generation_test_result = generate(&generate_test_prompt);
             let mut code_test = extract_code(&generation_test_result);
-            println!("{}", code_test);
-            println!("===============");
+
             create_rust_project(&code, &code_test, &dependencies);
             loop {
                 let (exit_code, output) = execute("test");
                 if exit_code == 0 {
-                    println!("{}\n{}", code, code_test);
+                    println!("{}\n{}\n{}", dependencies,  code, code_test);
                     println!("Finished");
                     return;
                 } else {
@@ -228,7 +224,6 @@ fn test_solution(
                 if test_rewrite_count > number_of_attempts {
                     println!("Too many attempts to rewrite code. Exit.");
                     println!("===============");
-                    println!("{}\n{}", code, code_test);
                     return;
                 }
             }
@@ -256,7 +251,7 @@ fn test_solution(
 
 
 fn execute(command: &str) -> (i32, String) {
-    println!("cargo {}", command);
+    println!("Run: cargo {}", command);
     let output = std::process::Command::new("cargo")
         .arg(command)
         .current_dir("sandbox")
@@ -312,11 +307,16 @@ fn extract_code(input: &str) -> String {
     for line in input.lines() {
         if line.trim().starts_with("```") {
             if in_code_block {
-                if code == "" {
-                    return "Error: extract_code()".to_string();
+                let res = if code == "" {
+                    "Error: extract_code()".to_string()
                 } else {
-                    return code;
+                    code
+                };
+                if DEBUG {
+                    println!("{}",res);
+                    println!("============");
                 }
+                return res;
             }
             in_code_block = !in_code_block;
         } else if in_code_block {
@@ -324,17 +324,24 @@ fn extract_code(input: &str) -> String {
             code.push_str("\n");
         }
     }
-    if code == "" {
+    let res = if code == "" {
         "Error: extract_code()".to_string()
     } else {
         code
+    };
+
+    if DEBUG {
+        println!("{}",res);
+        println!("============");
     }
+
+    res
 }
 
 
 fn generate(prompt: &str) -> String {
     let request = OllamaRequest {
-        model: "gemma2:2b".to_string(),
+        model: "gemma2".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
@@ -344,7 +351,7 @@ fn generate(prompt: &str) -> String {
     println!("Request: {}", request.prompt);
     println!("===============");
     let client = Client::builder()
-        .timeout(Duration::from_secs(120))
+        .timeout(Duration::from_secs(60*5))
         .build()
         .unwrap();
 
@@ -427,9 +434,11 @@ fn extract_error_message(output: &str, exit_code: i32) -> String {
     } else  {
         r
     };
-    println!("=========Errors=========:");
-    println!("{}", ret);
-    println!("===================");
+    if DEBUG {
+        println!("=========Errors=========:");
+        println!("{}", ret);
+        println!("===================");
+    }
     ret
 }
 
