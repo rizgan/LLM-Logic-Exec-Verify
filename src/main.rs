@@ -350,19 +350,21 @@ Anser(just number):
             }
             create_rust_project(&code, "", &dependencies);
             let (exit_code_immut, output_immut) = execute("build");
-            output = output_immut;
+            if exit_code_immut != 0 {
+                output = output_immut;
 
-            // Ошибка в коде, попытка исправить
-            let rewrite_code_prompt = construct_prompt(
-                rewrite_code_prompt_template,
-                vec![&explanation, &code, &output],
-            );
-            let rewrite_code_result = generate(&rewrite_code_prompt);
-            code = extract_code(&rewrite_code_result);
-            create_rust_project(&code, "", &dependencies);
-            let (exit_code_immut, output_immut) = execute("build");
-            exit_code = exit_code_immut;
-            output = output_immut;
+                // Ошибка в коде, попытка исправить
+                let rewrite_code_prompt = construct_prompt(
+                    rewrite_code_prompt_template,
+                    vec![&explanation, &code, &output],
+                );
+                let rewrite_code_result = generate(&rewrite_code_prompt);
+                code = extract_code(&rewrite_code_result);
+                create_rust_project(&code, "", &dependencies);
+                let (exit_code_immut, output_immut) = execute("build");
+                exit_code = exit_code_immut;
+                output = output_immut;
+            }
         }
     }
 
@@ -407,6 +409,7 @@ fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     };
 
     println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
+    println!("{}\n{}\n{}", code, dependencies, test);
     println!("====================");
 
     let sandbox_path = "sandbox";
