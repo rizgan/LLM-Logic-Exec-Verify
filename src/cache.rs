@@ -3,19 +3,34 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Cache {
-    pub cache: HashMap<String, String>,
+    cache: HashMap<String, String>,
+    attempts: HashMap<String, u32>,
 }
 
 impl Cache {
     pub fn new() -> Cache {
         let mut cache = Cache {
             cache: HashMap::new(),
+            attempts: HashMap::new(),
         };
         cache.restore();
         cache
     }
 
-    pub fn get(&self, key: &str) -> Option<&String> {
+    pub fn get(&mut self, key: &str) -> Option<&String> {
+        if self.cache.contains_key(key) {
+            let attempts = self.attempts.get(key).or_else(|| Some(&0)).unwrap().clone();
+            self.attempts.insert(key.to_string(), attempts + 1);
+            self.save();
+            if attempts > 2 {
+                self.cache.remove(key);
+                self.attempts.remove(key);
+                self.save();
+                println!("To many attempts cache removed");
+                println!("================");
+                return None;
+            }
+        }
         self.cache.get(key)
     }
 
