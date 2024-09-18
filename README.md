@@ -32,7 +32,7 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 ### Clone the Repository
 
 ```bash
-git https://github.com/evgenyigumnov/LLM-Logic-Exec-Verify.git
+git clone https://github.com/evgenyigumnov/LLM-Logic-Exec-Verify.git
 cd LLM-Logic-Exec-Verify
 ```
 
