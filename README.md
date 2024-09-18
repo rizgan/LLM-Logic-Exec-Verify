@@ -90,7 +90,49 @@ TestsPass --> [*]
 
 4. **Completion**
 
-   Once the code compiles and all tests pass, the final code and tests will be displayed.
+   Once the code compiles and all tests pass, the final code and tests will be displayed and result of work will be saved in `sandbox` folder.
+
+For example:
+
+```
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug)]
+struct User {
+    name: String,
+    age: u32,
+}
+
+fn solution(json_string: &str) -> Result<User, serde_json::Error> {
+    let user: User = serde_json::from_str(json_string)?;
+    Ok(user)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_solution() {
+        let json_string = r#"{"name": "John Doe", "age": 30}"#;
+        let user = solution(json_string).unwrap();
+        assert_eq!(user.name, "John Doe");
+        assert_eq!(user.age, 30);
+    }
+
+    #[test]
+    fn test_solution_invalid_json() {
+        let json_string = r#"{"name": "John Doe", "age": }"#;
+        assert!(solution(json_string).is_err());
+    }
+}
+
+Finished
+```
 
 
 ## Example of queries for code generation
