@@ -190,7 +190,7 @@ Answer(just number):
 "#;
 
 
-    let number_of_attempts = 3; // Максимальное количество попыток на каждом уровне
+    let number_of_attempts = 3;
 
     println!("Explain what function should do:");
     let mut explanation = String::new();
@@ -203,7 +203,7 @@ Answer(just number):
     let mut dependencies = "".to_string();
     let mut code_test = "".to_string();
 
-    // Генерация кода
+
     let generate_code_prompt = construct_prompt(
         generate_code_prompt_template,
         vec![&explanation],
@@ -212,7 +212,7 @@ Answer(just number):
     let generation_code_result = generate(&generate_code_prompt, &mut cache);
     code = extract_code(&generation_code_result);
 
-    // Проверка компиляции кода
+
     create_rust_project(&code, "", "");
     let (mut exit_code, mut output) = execute("build", &mut cache);
 
@@ -226,12 +226,12 @@ Answer(just number):
 
 
         if exit_code == 0 {
-            // Код успешно скомпилирован
+
             dependencies_attempts = 0;
 
             'dependencies_generation: loop {
                 if dependencies_attempts >= number_of_attempts {
-                    // Возврат к генерации кода
+
                     code_attempts = 0;
                     exit_code = 1;
                     continue 'code_generation;
@@ -239,7 +239,7 @@ Answer(just number):
                 dependencies_attempts += 1;
                 if exit_code == 0 &&  (dependencies_attempts == 1 || dependencies == "")  {
 
-                    // Проверка необходимости зависимостей
+
                     let build_dependencies_req_prompt = construct_prompt(
                         build_dependencies_req_prompt_template,
                         vec![&explanation, &code, &output],
@@ -247,30 +247,26 @@ Answer(just number):
                     let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
                     let build_dependencies_req = build_dependencies_req_result.trim();
                     if extract_number(build_dependencies_req) == 1 {
-                        // Генерация зависимостей
+
                         let build_dependencies_prompt = construct_prompt(
                             build_dependencies_prompt_template,
                             vec![&explanation, &code],
                         );
                         let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
                         dependencies = extract_code(&build_dependencies_result);
-                    } else {
-                        // dependencies = "".to_string();
                     }
 
-                    // Проверка компиляции кода с зависимостями
+
                     create_rust_project(&code, "", &dependencies);
                 }
                 let (exit_code_immut, output_immut) = execute("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
                 if exit_code == 0 {
-                    // Зависимости успешно скомпилированы
                     test_attempts = 0;
 
                     loop {
                         if test_attempts >= number_of_attempts {
-                            // Возврат к генерации зависимостей
                             dependencies_attempts = 0;
                             exit_code = 0;
                             continue 'dependencies_generation;
@@ -286,16 +282,14 @@ Answer(just number):
                             let generation_test_result = generate(&generate_test_prompt, &mut cache);
                             code_test = extract_code(&generation_test_result);
 
-                            // Проверка прохождения тестов
                             create_rust_project(&code, &code_test, &dependencies);
                         }
-                        // Генерация тестов
+
 
                         let (exit_code_immut, output_immut) = execute("test", &mut cache);
                         exit_code = exit_code_immut;
                         output = output_immut;
                         if exit_code == 0 {
-                            // Тесты успешно пройдены
                             println!("{}\n{}\n{}", dependencies, code, code_test);
                             println!("Finished");
                             return;
@@ -307,7 +301,6 @@ Answer(just number):
                             );
                             let rewrite_code_req_result = generate(&rewrite_code_req_prompt_template_prompt, &mut cache);
                             if extract_number(&rewrite_code_req_result) == 1 {
-                                // Ошибка в коде, попытка исправить
                                 let rewrite_code_prompt = construct_prompt(
                                     rewrite_code_prompt_template,
                                     vec![&explanation, &code, &output],
@@ -325,7 +318,6 @@ Answer(just number):
                         }
                     }
                 } else {
-                    // Ошибка в зависимостях, попытка исправить
                     let rewrite_dependencies_prompt = construct_prompt(
                         rewrite_dependencies_prompt_template,
                         vec![&explanation, &code, &dependencies, &output],
@@ -335,8 +327,6 @@ Answer(just number):
                 }
             }
         } else {
-
-            // Проверка необходимости зависимостей
             let build_dependencies_req_prompt = construct_prompt(
                 build_dependencies_req_prompt_template,
                 vec![&explanation, &code, &output],
@@ -344,22 +334,18 @@ Answer(just number):
             let build_dependencies_req_result = generate(&build_dependencies_req_prompt, &mut cache);
             let build_dependencies_req = build_dependencies_req_result.trim();
             if extract_number(build_dependencies_req) == 1 {
-                // Генерация зависимостей
                 let build_dependencies_prompt = construct_prompt(
                     build_dependencies_prompt_template,
                     vec![&explanation, &code],
                 );
                 let build_dependencies_result = generate(&build_dependencies_prompt, &mut cache);
                 dependencies = extract_code(&build_dependencies_result);
-            } else {
-                // dependencies = "".to_string();
             }
             create_rust_project(&code, "", &dependencies);
             let (exit_code_immut, output_immut) = execute("build", &mut cache);
             if exit_code_immut != 0 {
                 output = output_immut;
 
-                // Ошибка в коде, попытка исправить
                 let rewrite_code_prompt = construct_prompt(
                     rewrite_code_prompt_template,
                     vec![&explanation, &code, &output],
