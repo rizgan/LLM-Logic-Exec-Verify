@@ -1,6 +1,7 @@
 // create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
+//  parse json string and return struct User (age, name)
 use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -256,8 +257,10 @@ fn execute(command: &str) -> (i32, String) {
     let std_out = String::from_utf8(output.stdout).unwrap();
     let std_err = String::from_utf8(output.stderr).unwrap();
     println!("Exit code: {}", exit_code);
-    let output = std_out + &std_err;
-    println!("Output: {}", output);
+    let output = std_err + &std_out ;
+    if DEBUG {
+        println!("Output: {}", output);
+    }
     println!("===============");
 
     (exit_code,extract_error_message(&output, exit_code))
