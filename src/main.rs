@@ -209,6 +209,7 @@ use super::*;
                 let (exit_code, output) = execute("test");
                 if exit_code == 0 {
                     println!("{}\n{}", code, code_test);
+                    println!("Finished");
                     return;
                 } else {
                     test_rewrite_count += 1;
@@ -303,9 +304,13 @@ fn extract_code(input: &str) -> String {
     let mut code = "".to_string();
     let mut in_code_block = false;
     for line in input.lines() {
-        if line.starts_with("```") {
+        if line.trim().starts_with("```") {
             if in_code_block {
-                return code;
+                if code == "" {
+                    return "Error: extract_code()".to_string();
+                } else {
+                    return code;
+                }
             }
             in_code_block = !in_code_block;
         } else if in_code_block {
@@ -313,7 +318,11 @@ fn extract_code(input: &str) -> String {
             code.push_str("\n");
         }
     }
-    code
+    if code == "" {
+        "Error: extract_code()".to_string()
+    } else {
+        code
+    }
 }
 
 
@@ -323,7 +332,7 @@ fn generate(prompt: &str) -> String {
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
-            num_predict: 10000,
+            num_predict: 500,
         },
     };
     println!("Request: {}", request.prompt);
