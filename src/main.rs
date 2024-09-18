@@ -9,8 +9,6 @@ const DEBUG: bool = false;
 
 fn main() {
 
-    let number_of_attempts = 4;
-    let number_of_attempts_test= 1;
     let generate_code_prompt_template = r#"
 {{{0}}}
 
@@ -149,104 +147,145 @@ fn test_solution(
 "#;
 
 
-    println!("Explain what function should to do:");
+
+    let number_of_attempts = 3; // Максимальное количество попыток на каждом уровне
+
+    println!("Explain what function should do:");
     let mut explanation = String::new();
     std::io::stdin().read_line(&mut explanation).unwrap();
-    let generate_code_prompt = construct_prompt(generate_code_prompt_template, vec![&explanation]);
+
+    let mut code_attempts = 0;
+    let mut dependencies_attempts = 0;
+    let mut test_attempts = 0;
+
+    let mut code = "".to_string();
+    let mut dependencies = "".to_string();
+    let mut code_test = "".to_string();
+
+    // Генерация кода
+    let generate_code_prompt = construct_prompt(
+        generate_code_prompt_template,
+        vec![&explanation],
+    );
     println!("===============");
     let generation_code_result = generate(&generate_code_prompt);
-    let mut code =  extract_code(&generation_code_result);
+    code = extract_code(&generation_code_result);
 
-    let mut dependencies: String = "".to_string();
-    let build_dependencies_req_prompt = construct_prompt(build_dependencies_req_prompt_template, vec![&explanation, &code]);
-    let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
-    let build_dependencies_req = build_dependencies_req_result.trim();
-    if extract_number(build_dependencies_req) == 1 {
-        let build_dependencies_prompt = construct_prompt(build_dependencies_prompt_template, vec![&explanation, &code]);
-        let build_dependencies_result = generate(&build_dependencies_prompt);
-        dependencies = extract_code(&build_dependencies_result);
-        create_rust_project("", "", &dependencies);
-        let (mut exit_code, mut output) = execute("build");
-        let mut dependencies_rewrite_count = 0;
-        while exit_code != 0 || dependencies_rewrite_count == 0 {
-            if dependencies_rewrite_count > number_of_attempts {
-                println!("Too many attempts to rewrite dependencies. Exit.");
-                println!("===============");
-                return;
-            }
-            if exit_code == 0 {
-                break;
-            } else {
-                dependencies_rewrite_count += 1;
-                let rewrite_dependencies_prompt = construct_prompt(rewrite_dependencies_prompt_template, vec![&explanation, &code, &dependencies, &output]);
-                let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
-                dependencies = extract_code(&rewrite_dependencies_result);
-                create_rust_project("", "", &dependencies);
-                (exit_code, output) = execute("build");
-            }
-        }
-    }
-
-    create_rust_project(&code, "", &dependencies);
+    // Проверка компиляции кода
+    create_rust_project(&code, "", "");
     let (mut exit_code, mut output) = execute("build");
-    let mut code_rewrite_count = 0;
-    while exit_code != 0 || code_rewrite_count == 0 {
-        if code_rewrite_count > number_of_attempts {
-            println!("Too many attempts to rewrite code. Exit.");
-            println!("===============");
+
+    'code_generation: loop {
+        if code_attempts >= number_of_attempts {
+            println!("Too many attempts to generate code. Exiting.");
             return;
         }
+        code_attempts += 1;
+
+
+
         if exit_code == 0 {
-            let mut test_rewrite_count = 0;
-            let generate_test_prompt = construct_prompt(generate_test_prompt_template, vec![&explanation, &code]);
-            let generation_test_result = generate(&generate_test_prompt);
-            let mut code_test = extract_code(&generation_test_result);
+            // Код успешно скомпилирован
+            dependencies_attempts = 0;
 
-            create_rust_project(&code, &code_test, &dependencies);
-            loop {
-                let (exit_code, output) = execute("test");
-                if exit_code == 0 {
-                    println!("{}\n{}\n{}", dependencies,  code, code_test);
-                    println!("Finished");
-                    return;
-                } else {
-                    test_rewrite_count += 1;
-                    if test_rewrite_count > number_of_attempts_test {
-                        let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
-                        let rewrite_code_result = generate(&rewrite_code_prompt);
-                        code = extract_code(&rewrite_code_result);
-                        create_rust_project(&code, &code_test, &dependencies);
-                    } else {
-                        let rewrite_test_prompt = construct_prompt(rewrite_test_prompt_template, vec![&explanation, &code, &code_test, &output]);
-                        let rewrite_test_result = generate(&rewrite_test_prompt);
-                        code_test = extract_code(&rewrite_test_result);
-                        create_rust_project(&code, &code_test, &dependencies);
-                    }
+            'dependencies_generation: loop {
+                if dependencies_attempts >= number_of_attempts {
+                    // Возврат к генерации кода
+                    code_attempts = 0;
+                    exit_code = 1;
+                    continue 'code_generation;
                 }
+                dependencies_attempts += 1;
+                if exit_code == 0 {
 
-                if test_rewrite_count > number_of_attempts {
-                    println!("Too many attempts to rewrite test. Exit.");
-                    println!("===============");
-                    return;
+                    // Проверка необходимости зависимостей
+                    let build_dependencies_req_prompt = construct_prompt(
+                        build_dependencies_req_prompt_template,
+                        vec![&explanation, &code],
+                    );
+                    let build_dependencies_req_result = generate(&build_dependencies_req_prompt);
+                    let build_dependencies_req = build_dependencies_req_result.trim();
+                    if extract_number(build_dependencies_req) == 1 {
+                        // Генерация зависимостей
+                        let build_dependencies_prompt = construct_prompt(
+                            build_dependencies_prompt_template,
+                            vec![&explanation, &code],
+                        );
+                        let build_dependencies_result = generate(&build_dependencies_prompt);
+                        dependencies = extract_code(&build_dependencies_result);
+                    } else {
+                        dependencies = "".to_string();
+                    }
+
+                    // Проверка компиляции кода с зависимостями
+                    create_rust_project(&code, "", &dependencies);
+                }
+                let (exit_code_immut, output_immut) = execute("build");
+                exit_code = exit_code_immut;
+                output = output_immut;
+                if exit_code == 0 {
+                    // Зависимости успешно скомпилированы
+                    test_attempts = 0;
+
+                    'test_generation: loop {
+                        if test_attempts >= number_of_attempts {
+                            // Возврат к генерации зависимостей
+                            dependencies_attempts = 0;
+                            exit_code = 1;
+                            continue 'dependencies_generation;
+                        }
+                        test_attempts += 1;
+
+                        if exit_code == 0 {
+
+                            let generate_test_prompt = construct_prompt(
+                                generate_test_prompt_template,
+                                vec![&explanation, &code],
+                            );
+                            let generation_test_result = generate(&generate_test_prompt);
+                            code_test = extract_code(&generation_test_result);
+
+                            // Проверка прохождения тестов
+                            create_rust_project(&code, &code_test, &dependencies);
+                        }
+                        // Генерация тестов
+
+                        let (exit_code_immut, output_immut) = execute("test");
+                        exit_code = exit_code_immut;
+                        output = output_immut;
+                        if exit_code == 0 {
+                            // Тесты успешно пройдены
+                            println!("{}\n{}\n{}", dependencies, code, code_test);
+                            println!("Finished");
+                            return;
+                        } else {
+                            // Ошибка в тестах, попытка исправить
+                            let rewrite_test_prompt = construct_prompt(
+                                rewrite_test_prompt_template,
+                                vec![&explanation, &code, &code_test, &output],
+                            );
+                            let rewrite_test_result = generate(&rewrite_test_prompt);
+                            code_test = extract_code(&rewrite_test_result);
+                        }
+                    }
+                } else {
+                    // Ошибка в зависимостях, попытка исправить
+                    let rewrite_dependencies_prompt = construct_prompt(
+                        rewrite_dependencies_prompt_template,
+                        vec![&explanation, &code, &dependencies, &output],
+                    );
+                    let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
+                    dependencies = extract_code(&rewrite_dependencies_result);
                 }
             }
         } else {
-            code_rewrite_count += 1;
-
-            let rewrite_dependencies_prompt = construct_prompt(rewrite_dependencies_prompt_template, vec![&explanation, &code, &dependencies, &output]);
-            let rewrite_dependencies_result = generate(&rewrite_dependencies_prompt);
-            let dependencies_new = extract_code(&rewrite_dependencies_result);
-            create_rust_project(&code, "", &dependencies_new);
-            (exit_code, output) = execute("build");
-            if exit_code == 0 {
-                dependencies = dependencies_new;
-            }
-
-            let rewrite_code_prompt = construct_prompt(rewrite_code_prompt_template, vec![&explanation, &code, &output]);
+            // Ошибка в коде, попытка исправить
+            let rewrite_code_prompt = construct_prompt(
+                rewrite_code_prompt_template,
+                vec![&explanation, &code, &output],
+            );
             let rewrite_code_result = generate(&rewrite_code_prompt);
             code = extract_code(&rewrite_code_result);
-            create_rust_project(&code, "", &dependencies);
-            (exit_code, output) = execute("build");
         }
     }
 
@@ -367,7 +406,7 @@ fn extract_code(input: &str) -> String {
 fn generate(prompt: &str) -> String {
      let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
-        model: "gemma2".to_string(),
+        model: "gemma2:2b".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
