@@ -192,7 +192,7 @@ Answer(just number):
 
     let number_of_attempts = 3;
 
-    println!("Explain what function should do:");
+    println!("Explain what the function should do:");
     let mut explanation = String::new();
     std::io::stdin().read_line(&mut explanation).unwrap();
 

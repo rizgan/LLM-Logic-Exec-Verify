@@ -48,7 +48,7 @@ cd LLM-Logic-Exec-Verify
    The program will prompt:
 
    ```
-   Explain what function should do:
+   Explain what the function should do:
    ```
 
    Enter a detailed explanation of the function you want to generate.
