@@ -225,7 +225,7 @@ fn test_solution(
                 }
 
                 if test_rewrite_count > number_of_attempts {
-                    println!("Too many attempts to rewrite code. Exit.");
+                    println!("Too many attempts to rewrite test. Exit.");
                     println!("===============");
                     return;
                 }
