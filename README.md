@@ -55,16 +55,18 @@ cd LLM-Logic-Exec-Verify
    ```
 
    Enter a detailed explanation of the function you want to generate.
-
-3. **Automatic Processing**
+   ```
+   parse json string and return struct User (age, name)
+   ```
+ 3. **Automatic Processing**
 
    The tool will:
 
-    - Generate the function code using an LLM.
-    - Attempt to compile the code.
-    - If compilation fails, it will check for missing dependencies and attempt to resolve them.
-    - Generate tests for the function.
-    - Run the tests and iteratively fix any errors.
+- Generate the function code using an LLM.
+- Attempt to compile the code.
+- If compilation fails, it will check for missing dependencies and attempt to resolve them.
+- Generate tests for the function.
+- Run the tests and iteratively fix any errors.
 
 ```mermaid
 stateDiagram
