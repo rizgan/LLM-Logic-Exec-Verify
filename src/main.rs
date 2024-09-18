@@ -1,9 +1,12 @@
+use std::process::ExitCode;
 // create struct #[derive(Serialize, Deserialize, Debug)] User(age:i32, name:String) and create function which parse json string and return struct User  and use serde with features = ["derive"]  and function look like fn solution(input: &str) ->  Result<User, serde_json::Error>
 // take 2 params and multiply and return result
 // take 1 parameter multiply by random number and return tuple with  result and random number
 use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+
+const DEBUG: bool = false;
 
 fn main() {
 
@@ -43,7 +46,7 @@ Rust language code of this function:
 {{{1}}}
 ```
 
-For this function is not required some dependencies in Cargo.toml file?pa
+For this function is not required some dependencies in Cargo.toml file?
 1. Yes
 2. No
 Anser(just number):"#;
@@ -267,7 +270,7 @@ fn execute(command: &str) -> (i32, String) {
     println!("Output: {}", output);
     println!("===============");
 
-    (exit_code,extract_error_message(&output))
+    (exit_code,extract_error_message(&output, exit_code))
 }
 fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     let sandbox_path = "sandbox";
@@ -331,7 +334,7 @@ fn extract_code(input: &str) -> String {
 
 fn generate(prompt: &str) -> String {
     let request = OllamaRequest {
-        model: "gemma2".to_string(),
+        model: "gemma2:2b".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
@@ -400,7 +403,7 @@ fn extract_number(input: &str) -> i32 {
     1 // default value if no number found
 }
 
-fn extract_error_message(output: &str) -> String {
+fn extract_error_message(output: &str, exit_code: i32) -> String {
     let mut error_lines = Vec::new();
     let mut in_error_section = false;
 
@@ -418,8 +421,13 @@ fn extract_error_message(output: &str) -> String {
         }
     }
 
-    let ret = error_lines.join("\n");
-    println!("===================Errors:");
+    let r = error_lines.join("\n");
+    let ret = if r == "" && exit_code != 0 {
+        output.to_string()
+    } else  {
+        r
+    };
+    println!("=========Errors=========:");
     println!("{}", ret);
     println!("===================");
     ret
