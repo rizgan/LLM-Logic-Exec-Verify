@@ -1,40 +1,48 @@
-1. Ask write code
-2. Compile code
-3. If compile with error go to 4, else go to 5
-4. Rewrite code by error message, go to 2
-5. Run test
-6. If test fail go to 7, else go to 7
-7. Rewrite code by error test message, go to 2
-8. End
-
-State Diagram
-```mermaid
 stateDiagram-v2
-    [*] --> Ask_Write_Code
-    Ask_Write_Code --> Compile_Code
-    Compile_Code --> Compile_Error_Choice
-    state Compile_Error_Choice <<choice>>
-    Compile_Error_Choice --> Rewrite_Code_By_Error_Message : Compile Error
-    Compile_Error_Choice --> Run_Test : No Error
-    Rewrite_Code_By_Error_Message --> Compile_Code
-    Run_Test --> Test_Fail_Choice
-    state Test_Fail_Choice <<choice>>
-    Test_Fail_Choice --> Rewrite_Code_By_Test_Error_Message : Test Fail
-    Test_Fail_Choice --> End : Test Pass
-    Rewrite_Code_By_Test_Error_Message --> Compile_Code
+[*] --> Start
+Start --> Ask_Explanation
+Ask_Explanation --> Generate_Code
+Generate_Code --> Increment_Code_Attempts
+Increment_Code_Attempts --> Code_Attempts_Exceeded{Code attempts >= Max?}
+Code_Attempts_Exceeded --> |Yes| Exit
+Code_Attempts_Exceeded --> |No| Create_Project
+Create_Project --> Compile_Code
+Compile_Code --> Compilation_Success{Compilation success?}
+Compilation_Success --> |Yes| Dependencies_Loop
+Compilation_Success --> |No| Check_Dependencies_Needed
+
+    Check_Dependencies_Needed --> Dependencies_Needed{Dependencies needed?}
+    Dependencies_Needed --> |Yes| Generate_Dependencies
+    Dependencies_Needed --> |No| Rewrite_Code
+    Generate_Dependencies --> Update_Dependencies
+    Update_Dependencies --> Increment_Dependencies_Attempts
+    Increment_Dependencies_Attempts --> Dependencies_Attempts_Exceeded{Dependencies attempts >= Max?}
+    Dependencies_Attempts_Exceeded --> |Yes| Reset_Code_Attempts
+    Dependencies_Attempts_Exceeded --> |No| Create_Project
+    Reset_Code_Attempts --> Reset_Code_Counter
+    Reset_Code_Counter --> Generate_Code
+    Rewrite_Code --> Increment_Code_Attempts
+    Increment_Code_Attempts --> Code_Attempts_Exceeded
+
+    Dependencies_Loop --> Generate_Test_Code
+    Generate_Test_Code --> Increment_Test_Attempts
+    Increment_Test_Attempts --> Test_Attempts_Exceeded{Test attempts >= Max?}
+    Test_Attempts_Exceeded --> |Yes| Reset_Dependencies_Attempts
+    Test_Attempts_Exceeded --> |No| Create_Project_With_Test
+    Reset_Dependencies_Attempts --> Reset_Dependencies_Counter
+    Reset_Dependencies_Counter --> Dependencies_Loop
+    Create_Project_With_Test --> Run_Tests
+    Run_Tests --> Tests_Passed{Tests passed?}
+    Tests_Passed --> |Yes| End
+    Tests_Passed --> |No| Fix_Code_Or_Test
+
+    Fix_Code_Or_Test --> Fix_Code{Fix code?}
+    Fix_Code --> |Yes| Rewrite_Code
+    Fix_Code --> |No| Rewrite_Test_Code
+    Rewrite_Test_Code --> Increment_Test_Attempts
+    Increment_Test_Attempts --> Test_Attempts_Exceeded
+    Rewrite_Code --> Increment_Code_Attempts
+    Increment_Code_Attempts --> Code_Attempts_Exceeded
+
     End --> [*]
- ```   
-
-Entity diagram
-
-1. Description of code
-2. Code
-3. Test
-4. Result of code compile
-5. Result of test
-```mermaid
-classDiagram
-    Code -- Compile_Result
-    Code -- Test
-    Compile_Result -- Test_Result
-```
+    Exit --> [*]
