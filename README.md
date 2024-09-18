@@ -36,14 +36,6 @@ git clone https://github.com/yourusername/lmm-logic-exec-verfy.git
 cd lmm-logic-exec-verfy
 ```
 
-### Install Dependencies
-
-Run the following command to install the necessary Rust dependencies:
-
-```bash
-cargo build
-```
-
 ## Usage
 
 1. **Start the Program**
