@@ -22,22 +22,6 @@ Result of compilation:
 {{{2}}}
 '''
 
-[[[rewrite_code_prompt_template]]]
-
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-Try to compile this code:
-'''bash
-cargo build
-'''
-Result of compilation:
-'''console
-{{{2}}}
-'''
-
 Rewrite code for fixing errors of this function (without example of usage like main function):
 ```rust
 
@@ -185,7 +169,7 @@ Result of testing:
 {{{3}}}
 '''
 
-Where are current erros placed ?
+Where are current errors placed ?
 1. In code. In 'solution' function
 2. In test. In 'test_solution' function
 Answer(just number):
