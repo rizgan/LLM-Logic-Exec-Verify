@@ -9,9 +9,9 @@ use crate::cache::Cache;
 const DEBUG: bool = false;
 
 fn main() {
-
     let mut cache = cache::Cache::new();
-    let prompt = prompt::Prompt::new("rust.prompt");
+    let lang = "rust";
+    let prompt = prompt::Prompt::new(&format!("{}.prompt", lang));
 
     let number_of_attempts = 3;
 
@@ -36,7 +36,7 @@ fn main() {
     code = extract_code(&generation_code_result);
 
 
-    create_rust_project(&code, "", "");
+    create_project(lang, &code, "", "");
     let (mut exit_code, mut output) = cargo("build", &mut cache);
 
     'code_generation: loop {
@@ -80,7 +80,7 @@ fn main() {
                     }
 
 
-                    create_rust_project(&code, "", &dependencies);
+                    create_project(lang, &code, "", &dependencies);
                 }
                 let (exit_code_immut, output_immut) = cargo("build", &mut cache);
                 exit_code = exit_code_immut;
@@ -105,7 +105,7 @@ fn main() {
                             let generation_test_result = llm_request(&generate_test_prompt, &mut cache);
                             code_test = extract_code(&generation_test_result);
 
-                            create_rust_project(&code, &code_test, &dependencies);
+                            create_project(lang, &code, &code_test, &dependencies);
                         }
 
 
@@ -164,7 +164,7 @@ fn main() {
                 let build_dependencies_result = llm_request(&build_dependencies_prompt, &mut cache);
                 dependencies = extract_code(&build_dependencies_result);
             }
-            create_rust_project(&code, "", &dependencies);
+            create_project(lang, &code, "", &dependencies);
             let (exit_code_immut, output_immut) = cargo("build", &mut cache);
             if exit_code_immut != 0 {
                 output = output_immut;
@@ -175,7 +175,7 @@ fn main() {
                 );
                 let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
                 code = extract_code(&rewrite_code_result);
-                create_rust_project(&code, "", &dependencies);
+                create_project(lang, &code, "", &dependencies);
                 let (exit_code_immut, output_immut) = cargo("build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
@@ -239,7 +239,7 @@ fn cargo(command: &str, cache: &mut Cache) -> (i32, String) {
 
     (exit_code,extract_error_message(&output, exit_code))
 }
-fn create_rust_project(code: &str, test: &str, dependencies: &str) {
+fn create_project(lang: &str, code: &str, test: &str, dependencies: &str) {
     let code_str = if code == "" {
         ""
     } else {
@@ -261,23 +261,24 @@ fn create_rust_project(code: &str, test: &str, dependencies: &str) {
     println!("{}\n{}\n{}", dependencies, code, test);
     println!("====================");
 
-    let sandbox_path = "sandbox";
-    let src_path = format!("{}/src", sandbox_path);
-    let main_path = format!("{}/src/main.rs", sandbox_path);
-    let cargo_path = format!("{}/Cargo.toml", sandbox_path);
-    if !std::path::Path::new(sandbox_path).exists() {
-        std::fs::create_dir(sandbox_path).unwrap();
-    } else {
-        std::fs::remove_dir_all(sandbox_path).unwrap();
-        std::fs::create_dir(sandbox_path).unwrap();
-    }
-    if !std::path::Path::new(&src_path).exists() {
-        std::fs::create_dir(&src_path).unwrap();
-    }
-    let main_rs = r#"fn main() {}"#;
-    std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, test)).unwrap();
+    if lang == "rust" {
+        let sandbox_path = "sandbox";
+        let src_path = format!("{}/src", sandbox_path);
+        let main_path = format!("{}/src/main.rs", sandbox_path);
+        let cargo_path = format!("{}/Cargo.toml", sandbox_path);
+        if !std::path::Path::new(sandbox_path).exists() {
+            std::fs::create_dir(sandbox_path).unwrap();
+        } else {
+            std::fs::remove_dir_all(sandbox_path).unwrap();
+            std::fs::create_dir(sandbox_path).unwrap();
+        }
+        if !std::path::Path::new(&src_path).exists() {
+            std::fs::create_dir(&src_path).unwrap();
+        }
+        let main_rs = r#"fn main() {}"#;
+        std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, test)).unwrap();
 
-    std::fs::write(&cargo_path, format!(r#"
+        std::fs::write(&cargo_path, format!(r#"
 [package]
 name = "sandbox"
 version = "0.1.0"
@@ -285,6 +286,9 @@ edition = "2018"
 
 {}
 "#, dependencies )).unwrap();
+    } else {
+        panic!("Unsupported language: {}", lang);
+    }
 }
 
 fn extract_code(input: &str) -> String {
