@@ -68,6 +68,11 @@ fn run_state_machine(
                 continue;
             }
             "create_project" => {
+                // create_project(code,"","")
+                // create_project(code,dependencies,"")
+                // create_project(code,dependencies,tests)
+
+
                 create_project(code, dependencies, tests);
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 current_state_name = next_state_name;
