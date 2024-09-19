@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-const states_str: &str = r#"
+const STATES: &str = r#"
 ```mermaid
 stateDiagram
 [*] --> llm_request("generate_code_prompt_template",[question]) : question
@@ -23,7 +23,7 @@ fn main() {
     let mut dependencies = "".to_string();
     let mut tests = "".to_string();
 
-    run_state_machine(states_str, question, &mut code, &mut dependencies, &mut tests);
+    run_state_machine(STATES, question, &mut code, &mut dependencies, &mut tests);
     println!("{}\n{}\n{}", code, dependencies, tests);
 }
 
@@ -133,7 +133,7 @@ fn extract_states(states_str_var: &str) -> HashMap<String, State> {
 fn extract_states_impl(states_str_var: &str) -> HashMap<String, State> {
     let mut states_map = HashMap::new();
 
-    for line in states_str.lines() {
+    for line in states_str_var.lines() {
         let line = line.trim();
 
         if line.is_empty() || line.starts_with("//") {
@@ -192,8 +192,8 @@ fn extract_param_array(param_str: &str) -> Vec<&str> {
     let state_params = state_params.split("]").collect::<Vec<&str>>()[0];
     state_params.split(",").collect::<Vec<&str>>()
 }
-fn create_project(code: &str, dependencies: &str, tests: &str) {
-    todo!()
+fn create_project(_code: &str, _dependencies: &str, _tests: &str) {
+    //
 }
 
 fn llm_request(prompt: &str, params: &Vec<String>) -> String {
@@ -207,17 +207,17 @@ fn extract_code(response: &str) -> String {
     "Extracted code".to_string()
 }
 
-fn extract_number(response: &str) -> i32 {
-    todo!()
+fn extract_number(_response: &str) -> i32 {
+    1
 }
 
-fn build_tool(command: &str) -> (bool, String) {
-    todo!()
+fn build_tool(_command: &str) -> (bool, String) {
+    (true, "Build output".to_string())
 }
 
 
 mod tests {
-    use crate::state_machine::{extract_states,  states_str};
+    use crate::state_machine::{extract_states, STATES};
 
     #[test]
     fn test_extract_state_type() {
@@ -239,12 +239,12 @@ mod tests {
 
     #[test]
     fn test_extract_states() {
-        println!("{:#?}", extract_states(states_str));
+        println!("{:#?}", extract_states(STATES));
     }
 
     #[test]
     fn test_extract_first_state() {
-        let first_state = super::extract_first_state(states_str);
+        let first_state = super::extract_first_state(STATES);
         assert_eq!(first_state, "llm_request(\"generate_code_prompt_template\",[question])");
     }
     #[test]
