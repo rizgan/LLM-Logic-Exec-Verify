@@ -68,10 +68,11 @@ fn run_state_machine(
                 continue;
             }
             "create_project" => {
-                // create_project(code,"","")
-                // create_project(code,dependencies,"")
-                // create_project(code,dependencies,tests)
-
+                if state_params.contains(&"code") {
+                    update_global_vars("code", state_params.iter().next().unwrap(), code, dependencies, tests, output);
+                } else {
+                    update_global_vars("code", "", code, dependencies, tests, output);
+                }
 
                 create_project(code, dependencies, tests);
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
