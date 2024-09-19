@@ -46,7 +46,7 @@ build_tool("build") --> llm_request("build_dependencies_req_prompt_template",[qu
 llm_request("build_dependencies_req_prompt_template",[question,code,output])  --> extract_number(response) : response
 extract_number(response) --> finish : 2
 extract_number(response) -->  llm_request("build_dependencies_prompt_template",[question,code]) : 1
-lm_request("build_dependencies_prompt_template",[question,code]) --> extract_code(dependencies) : dependencies
+llm_request("build_dependencies_prompt_template",[question,code]) --> extract_code(dependencies) : dependencies
 extract_code(dependencies) --> create_project(code,dependencies,tests) : dependencies 
 finish --> [*]
 ```
