@@ -1,18 +1,20 @@
 mod cache;
-mod prompt;
+mod llm_prompt;
 mod build_tool;
 
-mod llm;
+mod llm_api;
+mod llm_parser;
 
 use crate::build_tool::{build_tool, create_project};
-use crate::llm::llm_request;
+use crate::llm_api::llm_request;
+use crate::llm_parser::{extract_code, extract_number};
 
 const DEBUG: bool = false;
 
 fn main() {
     let mut cache = cache::Cache::new();
     let lang = "rust";
-    let prompt = prompt::Prompt::new(&format!("{}.prompt", lang));
+    let prompt = llm_prompt::Prompt::new(&format!("{}.prompt", lang));
 
     let number_of_attempts = 3;
 
@@ -190,104 +192,7 @@ fn main() {
 
 
 
-fn extract_code(input: &str) -> String {
-    let mut code = "".to_string();
-    let mut in_code_block = false;
-    for line in input.lines() {
-        if line.trim().starts_with("```") {
-            if in_code_block {
-                let res = if code == "" {
-                    "Error: extract_code()".to_string()
-                } else {
-                    code
-                };
-                if DEBUG {
-                    println!("{}",res);
-                    println!("============");
-                }
-                return res;
-            }
-            in_code_block = !in_code_block;
-        } else if in_code_block {
-            code.push_str(line);
-            code.push_str("\n");
-        }
-    }
-    let res = if code == "" {
-        "Error: extract_code()".to_string()
-    } else {
-        code
-    };
-
-    if DEBUG {
-        println!("{}",res);
-        println!("============");
-    }
-
-    res
-}
 
 
 
 
-fn extract_number(input: &str) -> i32 {
-    for word in input.split_whitespace() {
-        if let Ok(num) = word.parse::<i32>() {
-            return num;
-        }
-    }
-    1 // default value if no number found
-}
-
-fn extract_error_message(output: &str, exit_code: i32) -> String {
-    let mut error_lines = Vec::new();
-    let mut in_error_section = false;
-
-    for line in output.lines() {
-        if line.starts_with("error[") {
-            in_error_section = true;
-        }
-
-        if in_error_section {
-            error_lines.push(line);
-
-            if line.starts_with("For more information about this error") {
-                in_error_section = false;
-            }
-        }
-    }
-
-    let r = error_lines.join("\n");
-    let ret = if r == "" && exit_code != 0 {
-        output.to_string()
-    } else  {
-        r
-    };
-    if DEBUG {
-        println!("=========Errors=========:");
-        println!("{}", ret);
-        println!("===================");
-    }
-    ret
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_extract_code() {
-        let input = "This is code\n```rust\nprintln!(\"{}\", generate(\"What is the capital of France?\"));\n```\nExplanation of code  This is code\n```rust\nprintln!(\"{}\", generate(\"What is the capital of France?\"));\n```\nExplanation of code";
-        let expected = "println!(\"{}\", generate(\"What is the capital of France?\"));\n";
-        assert_eq!(extract_code(input), expected);
-    }
-
-
-    #[test]
-    fn test_extract_number() {
-        let input = "Bla bla bla\nTututu 123\nmore bla bla\nTutu 456\nbla bla";
-        let expected = 123;
-        assert_eq!(extract_number(input), expected);
-    }
-}

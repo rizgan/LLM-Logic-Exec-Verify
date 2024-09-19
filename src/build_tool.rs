@@ -1,5 +1,5 @@
 use crate::cache::Cache;
-use crate::{DEBUG, extract_error_message};
+use crate::{DEBUG};
 
 pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (i32, String) {
     if lang == "rust" {
@@ -50,7 +50,7 @@ pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (i32, String)
         }
         println!("===============");
 
-        (exit_code,extract_error_message(&output, exit_code))
+        (exit_code,extract_error_message(lang, &output, exit_code))
     } else {
         panic!("Unsupported language: {}", lang);
     }
@@ -106,4 +106,43 @@ edition = "2018"
     } else {
         panic!("Unsupported language: {}", lang);
     }
+}
+
+
+fn extract_error_message(lang: &str, output: &str, exit_code: i32) -> String {
+    let ret = if lang == "rust" {
+        let mut error_lines = Vec::new();
+        let mut in_error_section = false;
+
+        for line in output.lines() {
+            if line.starts_with("error[") {
+                in_error_section = true;
+            }
+
+            if in_error_section {
+                error_lines.push(line);
+
+                if line.starts_with("For more information about this error") {
+                    in_error_section = false;
+                }
+            }
+        }
+
+        let r = error_lines.join("\n");
+        let ret = if r == "" && exit_code != 0 {
+            output.to_string()
+        } else  {
+            r
+        };
+        ret
+    } else {
+        panic!("Unsupported language: {}", lang);
+    };
+
+    if DEBUG {
+        println!("=========Errors=========:");
+        println!("{}", ret);
+        println!("===================");
+    }
+    ret
 }
