@@ -8,10 +8,11 @@ fn main() {
     let mut code = "".to_string();
     let mut dependencies = "".to_string();
     let mut tests = "".to_string();
+    let mut output = "".to_string();
 
     // read states from file "state.md"
     let states_str = std::fs::read_to_string("state.md").unwrap();
-    run_state_machine(&states_str, question, &mut code, &mut dependencies, &mut tests);
+    run_state_machine(&states_str, question, &mut code, &mut dependencies, &mut tests, &mut output);
     println!("{}\n{}\n{}", code, dependencies, tests);
 }
 
@@ -23,6 +24,7 @@ fn run_state_machine(
     code: &mut String,
     dependencies: &mut String,
     tests: &mut String,
+    output: &mut String,
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
@@ -61,7 +63,7 @@ fn run_state_machine(
 
                 current_state_name = next_state_name;
                 current_state_params = next_state_params;
-                update_global_vars(&param, &result, code, dependencies, tests);
+                update_global_vars(&param, &result, code, dependencies, tests, output);
                 println!("===============");
                 continue;
             }
@@ -79,6 +81,7 @@ fn run_state_machine(
                 let param_first_name_value = result.0.to_string();
                 let param_second_name = "output".to_string();
                 let param_second_value = result.1.to_string();
+                update_global_vars("output", &param_second_value, code, dependencies, tests, output);
                 let transition_condition = format!("({},{})", param_first_name, param_second_name);
                 println!("{}", transition_condition);
                 let mut next_state_name = "".to_string();
@@ -135,11 +138,12 @@ fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: 
     }
     new_array
 }
-fn update_global_vars(param_name: &str, param_value: &str, code: &mut String, dependencies: &mut String, tests: &mut String)  {
+fn update_global_vars(param_name: &str, param_value: &str, code: &mut String, dependencies: &mut String, tests: &mut String, output: &mut String)  {
     match param_name {
         "code" => *code = param_value.to_string(),
         "dependencies" => *dependencies = param_value.to_string(),
         "tests" => *tests = param_value.to_string(),
+        "output" => *output = param_value.to_string(),
         &_ => {}
     }
 }
