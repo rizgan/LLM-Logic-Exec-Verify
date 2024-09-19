@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::format;
 
+const RANDOM: bool = false;
 const STATES: &str = r#"
 ```mermaid
 stateDiagram
@@ -108,6 +109,18 @@ fn run_state_machine(
                 current_state_params = next_state_params;
                 println!("===============");
 
+            }
+            "extract_number" => {
+                let result = extract_number(current_state_params.get(state_params[0]).unwrap());
+                let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
+                let mut next_state_params = HashMap::new();
+                next_state_params.insert(param.clone(), result.to_string());
+
+                current_state_name = next_state_name;
+                current_state_params = next_state_params;
+                println!("===============");
+                continue;
             }
             "finish" => {
                 return;
@@ -237,7 +250,7 @@ fn create_project(_code: &str, _dependencies: &str, _tests: &str) {
 fn llm_request(prompt: &str, params: &Vec<String>) -> String {
     println!("LLM Request: {}", prompt);
     println!("LLM Params: {:#?}", params);
-    "AI response".to_string()
+    format!("AI response on prompt:{} ", prompt)
 }
 
 fn extract_code(response: &str) -> String {
@@ -246,12 +259,20 @@ fn extract_code(response: &str) -> String {
 }
 
 fn extract_number(_response: &str) -> i32 {
-    1
+    let mut random = rand::random::<i32>() % 2 + 1;
+    if !RANDOM {
+        random = 1;
+    }
+    random
 }
 
 fn build_tool(command: &str) -> (bool, String) {
     println!("Building project with command: {}", command);
-    (false, "Build output".to_string())
+    let mut random = rand::random::<i32>() % 2 == 0;
+    if !RANDOM {
+        random = true;
+    }
+    (random, format!("Build output: {}", command).to_string())
 }
 
 
