@@ -53,3 +53,14 @@ impl Cache {
     }
 }
 
+mod tests {
+    #[test]
+    fn test_cache() {
+        let mut cache = super::Cache::new();
+        cache.set("key".to_string(), "value".to_string());
+        assert_eq!(cache.get("key").unwrap(), "value");
+        assert_eq!(cache.get("key").unwrap(), "value");
+        assert_eq!(cache.get("key").unwrap(), "value");
+        assert_eq!(cache.get("key"), None);
+    }
+}

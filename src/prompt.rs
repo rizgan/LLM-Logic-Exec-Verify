@@ -102,7 +102,7 @@ Result of compilation:
 {{{2}}}
 '''"#;
         std::fs::write("test.p", content).unwrap();
-        let mut prompt = Prompt::new("test.p");
+        let prompt = Prompt::new("test.p");
         println!("{:#?}", prompt);
         assert_eq!(prompt.create("generate_code_prompt_template", vec!["123"]), "\n123\n\nWrite on Rust language code of this function (without example of usage like main function):\n```rust\nfn solution(\n");
         assert_eq!(prompt.create("rewrite_code_prompt_template", vec!["123"]), "\n123\nRust language code of this function:\n```rust\n{{{1}}}\n```\nTry to compile this code:\n'''bash\ncargo build\n'''\nResult of compilation:\n'''console\n{{{2}}}\n'''\n");
@@ -113,6 +113,6 @@ Result of compilation:
         let template = "This is a template with {{{0}}} and {{{1}}}";
         let replace = vec!["first", "second"];
         let expected = "This is a template with first and second";
-        assert_eq!(crate::construct_prompt(template, replace), expected);
+        assert_eq!(construct_prompt(template, replace), expected);
     }
 }
