@@ -46,7 +46,6 @@ fn run_state_machine(
             state_name => {
                 println!("{}", current_state_name);
                 println!("{:#?}", current_state_params);
-                println!("===============");
                 let state_type = extract_state_type(state_name);
                 let state_params = extract_state_params(state_name);
                 let current_state = states.get(state_name).unwrap();
@@ -70,6 +69,7 @@ fn run_state_machine(
                         continue;
                     }
                 }
+                println!("===============");
 
             }
 
