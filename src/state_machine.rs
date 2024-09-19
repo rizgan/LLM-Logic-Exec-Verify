@@ -24,7 +24,7 @@ fn main() {
     let mut tests = "".to_string();
 
     run_state_machine(states_str, question, &mut code, &mut dependencies, &mut tests);
-    println!("{}/n{}/n{}", code, dependencies, tests);
+    println!("{}\n{}\n{}", code, dependencies, tests);
 }
 
 
@@ -63,6 +63,20 @@ fn run_state_machine(
 
                 continue;
             }
+            "extract_code" => {
+                let result = extract_code(current_state_params.get(state_params[0]).unwrap());
+                let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
+                let mut next_state_params = HashMap::new();
+                next_state_params.insert(param.clone(), result.clone());
+
+
+                current_state_name = next_state_name;
+                current_state_params = next_state_params;
+                update_global_vars(&param, &result, code, dependencies, tests);
+                println!("===============");
+                continue;
+            }
             "finish" => {
                 return;
             }
@@ -89,6 +103,14 @@ fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: 
         }
     }
     new_array
+}
+fn update_global_vars(param_name: &str, param_value: &str, code: &mut String, dependencies: &mut String, tests: &mut String)  {
+    match param_name {
+        "code" => *code = param_value.to_string(),
+        "dependencies" => *dependencies = param_value.to_string(),
+        "tests" => *tests = param_value.to_string(),
+        &_ => {}
+    }
 }
 
 
@@ -181,7 +203,8 @@ fn llm_request(prompt: &str, params: &Vec<String>) -> String {
 }
 
 fn extract_code(response: &str) -> String {
-    todo!()
+    println!("Extracting code from response: {}", response);
+    "Extracted code".to_string()
 }
 
 fn extract_number(response: &str) -> i32 {
