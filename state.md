@@ -12,6 +12,7 @@ fn extract_code(response: &str) -> String { }
 
 fn extract_number(response: &str) -> i32 { }
 
+fn build_tool(command: &str) -> (bool, String) { }
 
 ```
 
@@ -21,6 +22,9 @@ stateDiagram
 [*] --> llm_request("generate_code_prompt_template",question) : question
 llm_request("generate_code_prompt_template",question) --> extract_code(response_code) : response_code
 extract_code(response_code) --> create_project(code,dependencies,tests) : code
-create_project(code,dependencies,tests) --> [*]
+create_project(code,dependencies,tests) --> build_tool("build")
+build_tool("build") --> finish : (true,output) 
+build_tool("build") --> llm_request("generate_code_prompt_template",question) : (false,output) 
+finish --> [*]
 ```
 
