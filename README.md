@@ -161,7 +161,11 @@ I would love to see contributions from the community. If you experience bugs, fe
 
 ## Versions history
 
-### 0.1.0 - Prototype
+### 0.2.0 - State Machine - 20 September 2024
+- Move prompts from code to "rust.prompt" file
+- Move logic from code to "logic.md" file
+
+### 0.1.0 - Prototype - 17 September 2024
   - Code Generation
   - Automated Compilation
   - Dependency Resolution
@@ -169,6 +173,3 @@ I would love to see contributions from the community. If you experience bugs, fe
   - Error Correction
   - Caching Mechanism 
 
-### 0.2.0 - State Machine
-  - Move prompts from code to "rust.prompt" file
-  - Move logic from code to "logic.md" file 
