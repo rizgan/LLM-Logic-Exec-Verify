@@ -18,7 +18,7 @@ finish --> [*]
     let mut dependencies = "".to_string();
     let mut tests = "".to_string();
     
-    run_state_machine(question, code, dependencies, tests);
+    run_state_machine(states, question, code, dependencies, tests);
     println!("{}/n{}/n{}", code, dependencies, tests);
 }
 
