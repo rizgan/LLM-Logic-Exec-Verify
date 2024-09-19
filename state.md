@@ -20,7 +20,7 @@ fn extract_number(response: &str) -> i32 { }
 stateDiagram
 [*] --> llm_request("generate_code_prompt_template",question) : question
 llm_request("generate_code_prompt_template",question) --> extract_code(response_code) : response_code
-extract_code(response_code) --> create_project(code, dependencies, tests) : code
-create_project(code, dependencies, tests) --> [*]
+extract_code(response_code) --> create_project(code,dependencies,tests) : code
+create_project(code,dependencies,tests) --> [*]
 ```
 
