@@ -24,8 +24,8 @@ llm_request("generate_code_prompt_template",[question]) --> extract_code(respons
 extract_code(response_code) --> create_project(code,dependencies,tests) : code
 create_project(code,dependencies,tests) --> build_tool("build")
 build_tool("build") --> finish : (true,output) 
-build_tool("build") --> llm_request("build_dependencies_req_prompt_template",[question, output]) : (false,output) 
-llm_request("build_dependencies_req_prompt_template",[question, output])  --> extract_number(response) : response
+build_tool("build") --> llm_request("build_dependencies_req_prompt_template",[question,output]) : (false,output) 
+llm_request("build_dependencies_req_prompt_template",[question,output])  --> extract_number(response) : response
 extract_number(response) --> finish : number
 finish --> [*]
 ```
