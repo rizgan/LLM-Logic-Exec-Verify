@@ -50,7 +50,7 @@ fn run_state_machine(
         match state_type.as_str() {
             "llm_request" => {
                 let array_src = extract_param_array(state_params[1]);
-                let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests);
+                let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests, current_state_params);
                 let result = llm_request(state_params[0].replace("\"","").as_str(), &array);
 
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
@@ -123,7 +123,7 @@ fn run_state_machine(
     }
 }
 
-fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: &str, tests: &str) -> Vec<String> {
+fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: &str, tests: &str, params: HashMap<String, String>) -> Vec<String> {
     let mut new_array = Vec::new();
     for item in array {
         match item {
@@ -131,7 +131,7 @@ fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: 
             "code" => new_array.push(code.to_string()),
             "dependencies" => new_array.push(dependencies.to_string()),
             "tests" => new_array.push(tests.to_string()),
-            &_ => new_array.push(item.to_string())
+            &_ => new_array.push(params.get(item).unwrap().to_string())
         }
     }
     new_array
@@ -212,12 +212,17 @@ fn extract_state_type(state_str: &str) -> String {
     state_type.to_string()
 }
 fn extract_state_params(state_str: &str) -> Vec<&str> {
-    if !state_str.contains("(") {
-        return vec![];
+    if let Some(start) = state_str.find('(') {
+        if let Some(end) = state_str.rfind(')') {
+            let params_str = &state_str[start + 1..end];
+            // Разделяем строку на два элемента по первой запятой
+            params_str.splitn(2, ',').map(|s| s.trim()).collect()
+        } else {
+            vec![]
+        }
+    } else {
+        vec![]
     }
-    let state_params = state_str.split("(").collect::<Vec<&str>>()[1];
-    let state_params = state_params.split(")").collect::<Vec<&str>>()[0];
-    state_params.split(",").collect::<Vec<&str>>()
 }
 fn extract_param_array(param_str: &str) -> Vec<&str> {
     let state_params = param_str.split("[").collect::<Vec<&str>>()[1];
@@ -246,7 +251,7 @@ fn extract_number(_response: &str) -> i32 {
 
 fn build_tool(command: &str) -> (bool, String) {
     println!("Building project with command: {}", command);
-    (true, "Build output".to_string())
+    (false, "Build output".to_string())
 }
 
 
@@ -261,8 +266,8 @@ mod tests {
 
     #[test]
     fn test_extract_state_params() {
-        let state_str = r#"llm_request("generate_code_prompt_template",[question])"#;
-        assert_eq!(super::extract_state_params(state_str), vec!["\"generate_code_prompt_template\"","[question]"]);
+        let state_str = r#"llm_request("build_dependencies_req_prompt_template",[question,code,output])"#;
+        assert_eq!(super::extract_state_params(state_str), vec!["\"build_dependencies_req_prompt_template\"","[question,code,output]"]);
     }
 
     #[test]
