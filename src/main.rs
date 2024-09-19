@@ -11,7 +11,7 @@ const DEBUG: bool = false;
 fn main() {
 
     let mut cache = cache::Cache::new();
-    let prompt = prompt::Prompt::new("rust.p");
+    let prompt = prompt::Prompt::new("rust.prompt");
 
     let number_of_attempts = 3;
 
