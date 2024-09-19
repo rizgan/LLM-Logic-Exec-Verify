@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::format;
+use rand::Rng;
 
 const RANDOM: bool = true;
 
@@ -108,9 +109,8 @@ fn run_state_machine(
             "extract_number" => {
                 let result = extract_number(current_state_params.get(state_params[0]).unwrap());
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
-                let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
                 let mut next_state_params = HashMap::new();
-                next_state_params.insert(param.clone(), result.to_string());
+                next_state_params.insert(result.to_string(), result.to_string());
 
                 current_state_name = next_state_name;
                 current_state_params = next_state_params;
@@ -139,7 +139,11 @@ fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: 
             "code" => new_array.push(code.to_string()),
             "dependencies" => new_array.push(dependencies.to_string()),
             "tests" => new_array.push(tests.to_string()),
-            &_ => new_array.push(params.get(item).unwrap().to_string())
+            &_ => {
+                if params.contains_key(item) {
+                    new_array.push(params.get(item).unwrap().to_string())
+                }
+            }
         }
     }
     new_array
@@ -255,10 +259,12 @@ fn extract_code(response: &str) -> String {
 }
 
 fn extract_number(_response: &str) -> i32 {
-    let mut random = rand::random::<i32>() % 2 + 1;
+    let mut rng = rand::thread_rng();
+    let mut random = rng.gen_range(1..=2);
     if !RANDOM {
         random = 1;
     }
+    println!("Extracted number: {}", random);
     random
 }
 
