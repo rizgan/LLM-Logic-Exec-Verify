@@ -39,8 +39,6 @@ fn run_state_machine(
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
     let mut current_state_params: HashMap<String, String> = HashMap::new();
-    let mut next_state_name: String = "finish".to_string();
-    let mut next_state_params: HashMap<String, String> = HashMap::new();
     loop {
         match current_state_name.as_str() {
             state_name => {
@@ -57,29 +55,29 @@ fn run_state_machine(
 
                         let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                         let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
-                        next_state_params = HashMap::new();
+                        let mut next_state_params = HashMap::new();
                         next_state_params.insert(param, result);
+
+                        current_state_name = next_state_name;
+                        current_state_params = next_state_params;
+                        println!("===============");
+
+                        continue;
                     }
                     "finish" => {
                         return;
                     }
                     &_ => {
 
-                        next_state_name = "finish".to_string();
+                        current_state_params = HashMap::new();
+                        current_state_name = "finish".to_string();
+                        println!("===============");
                         continue;
                     }
                 }
-                println!("===============");
 
-            }
-
-            "finish" => {
-                return;
             }
         }
-        current_state_name = next_state_name.clone();
-        current_state_params = next_state_params.clone();
-
     }
 }
 
