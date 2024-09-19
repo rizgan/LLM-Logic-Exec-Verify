@@ -1,0 +1,191 @@
+[[[generate_code_prompt_template]]]
+
+{{{0}}}
+
+Write on Rust language code of this function (without example of usage like main function):
+```rust
+fn solution(
+
+[[[rewrite_code_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+Try to compile this code:
+'''bash
+cargo build
+'''
+Result of compilation:
+'''console
+{{{2}}}
+'''
+
+[[[rewrite_code_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+Try to compile this code:
+'''bash
+cargo build
+'''
+Result of compilation:
+'''console
+{{{2}}}
+'''
+
+Rewrite code for fixing errors of this function (without example of usage like main function):
+```rust
+
+
+[[[build_dependencies_req_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+```bash
+cargo build
+```
+
+Result of compilation:
+```console
+{{{2}}}
+```
+
+For this function is required some dependencies in Cargo.toml file?
+1. Some dependencies are required
+2. All dependencies are already included in standard library
+Answer(just number):
+
+
+[[[build_dependencies_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Write dependencies to Cargo.toml file (only dependencies section without Rust language code):
+```toml
+[package]
+name = "sandbox"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+
+[[[rewrite_dependencies_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Cargo.toml file
+```toml
+[package]
+name = "sandbox"
+version = "0.1.0"
+edition = "2018"
+
+{{{2}}}
+```
+
+cargo build
+
+Result of compilation:
+
+```console
+{{{3}}}
+```
+
+Rewrite dependencies for fixing error to Cargo.toml file (only dependencies section without Rust language code without comments):
+```toml
+[dependencies]
+
+
+[[[generate_test_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Write on Rust language code of test for this function (only test code without function implementation):
+```rust
+#[cfg(test)]
+mod tests {
+use super::*;
+
+#[test]
+fn test_solution(
+
+[[[rewrite_test_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Test code for this function:
+```rust
+{{{2}}}
+```
+
+'''bash
+cargo test
+'''
+
+Result of testing:
+'''console
+{{{3}}}
+'''
+
+Rewrite test code for fixing error (only test code without function implementation):
+```rust
+#[cfg(test)]
+mod tests {
+use super::*;
+
+#[test]
+fn test_solution(
+
+
+
+[[[rewrite_code_req_prompt_template]]]
+
+{{{0}}}
+Rust language code of this function:
+```rust
+{{{1}}}
+```
+
+Test code for this function:
+```rust
+{{{2}}}
+```
+
+'''bash
+cargo test
+'''
+
+Result of testing:
+'''console
+{{{3}}}
+'''
+
+Where are current erros placed ?
+1. In code. In 'solution' function
+2. In test. In 'test_solution' function
+Answer(just number):
