@@ -1,31 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::format;
 
-const RANDOM: bool = false;
-const STATES: &str = r#"
-```mermaid
-stateDiagram
-[*] --> llm_request("generate_code_prompt_template",[question]) : question
-llm_request("generate_code_prompt_template",[question]) --> extract_code(code_response) : code_response
-extract_code(code_response) --> create_project(code,dependencies,tests) : code
-create_project(code,dependencies,tests) --> build_tool("build")
-build_tool("build") --> finish : (true,output)
-build_tool("build") --> llm_request("build_dependencies_req_prompt_template",[question,code,output]) : (false,output)
-llm_request("build_dependencies_req_prompt_template",[question,code,output])  --> extract_number(response) : response
-extract_number(response) --> finish : 2
-extract_number(response) --> llm_request("build_dependencies_prompt_template",[question,code]) : 1
-llm_request("build_dependencies_prompt_template",[question,code]) --> extract_code(dependencies_response) : dependencies_response
-extract_code(dependencies_response) --> create_project(code,dependencies,tests) : dependencies
-finish --> [*]
-```
-"#;
+const RANDOM: bool = true;
+
 fn main() {
     let question = "take 2 params and multiply and return result";
     let mut code = "".to_string();
     let mut dependencies = "".to_string();
     let mut tests = "".to_string();
 
-    run_state_machine(STATES, question, &mut code, &mut dependencies, &mut tests);
+    // read states from file "state.md"
+    let states_str = std::fs::read_to_string("state.md").unwrap();
+    run_state_machine(&states_str, question, &mut code, &mut dependencies, &mut tests);
     println!("{}\n{}\n{}", code, dependencies, tests);
 }
 
@@ -277,8 +263,24 @@ fn build_tool(command: &str) -> (bool, String) {
 
 
 mod tests {
-    use crate::state_machine::{extract_states, STATES};
-
+    use crate::state_machine::{extract_states};
+    const STATES: &str = r#"
+```mermaid
+stateDiagram
+[*] --> llm_request("generate_code_prompt_template",[question]) : question
+llm_request("generate_code_prompt_template",[question]) --> extract_code(code_response) : code_response
+extract_code(code_response) --> create_project(code,dependencies,tests) : code
+create_project(code,dependencies,tests) --> build_tool("build")
+build_tool("build") --> finish : (true,output)
+build_tool("build") --> llm_request("build_dependencies_req_prompt_template",[question,code,output]) : (false,output)
+llm_request("build_dependencies_req_prompt_template",[question,code,output])  --> extract_number(response) : response
+extract_number(response) --> finish : 2
+extract_number(response) --> llm_request("build_dependencies_prompt_template",[question,code]) : 1
+llm_request("build_dependencies_prompt_template",[question,code]) --> extract_code(dependencies_response) : dependencies_response
+extract_code(dependencies_response) --> create_project(code,dependencies,tests) : dependencies
+finish --> [*]
+```
+"#;
     #[test]
     fn test_extract_state_type() {
         let state_str = r#"llm_request("generate_code_prompt_template",[question])"#;
