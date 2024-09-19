@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 
 const STATES: &str = r#"
 ```mermaid
@@ -76,6 +77,37 @@ fn run_state_machine(
                 update_global_vars(&param, &result, code, dependencies, tests);
                 println!("===============");
                 continue;
+            }
+            "create_project" => {
+                create_project(code, dependencies, tests);
+                let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                current_state_name = next_state_name;
+                current_state_params = HashMap::new();
+                println!("===============");
+                continue;
+            }
+            "build_tool" => {
+                let result = build_tool(state_params[0]);
+                let param_first_name = result.0.to_string();
+                let param_first_name_value = result.0.to_string();
+                let param_second_name = "output".to_string();
+                let param_second_value = result.1.to_string();
+                let transition_condition = format!("({},{})", param_first_name, param_second_name);
+                println!("{}", transition_condition);
+                let mut next_state_name = "".to_string();
+                for (key, value) in current_state.transitions.iter() {
+                    if value == &transition_condition {
+                        next_state_name = key.to_string();
+                        break;
+                    }
+                }
+                let mut next_state_params = HashMap::new();
+                next_state_params.insert(param_first_name, param_first_name_value);
+                next_state_params.insert(param_second_name, param_second_value);
+                current_state_name = next_state_name;
+                current_state_params = next_state_params;
+                println!("===============");
+
             }
             "finish" => {
                 return;
@@ -193,6 +225,7 @@ fn extract_param_array(param_str: &str) -> Vec<&str> {
     state_params.split(",").collect::<Vec<&str>>()
 }
 fn create_project(_code: &str, _dependencies: &str, _tests: &str) {
+    println!("Creating project");
     //
 }
 
@@ -211,7 +244,8 @@ fn extract_number(_response: &str) -> i32 {
     1
 }
 
-fn build_tool(_command: &str) -> (bool, String) {
+fn build_tool(command: &str) -> (bool, String) {
+    println!("Building project with command: {}", command);
     (true, "Build output".to_string())
 }
 
