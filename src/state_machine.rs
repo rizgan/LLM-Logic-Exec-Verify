@@ -1,47 +1,42 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use rand::Rng;
-
-const RANDOM: bool = true;
-
-fn main() {
-    let question = "take 2 params and multiply and return result";
-    let mut code = "".to_string();
-    let mut dependencies = "".to_string();
-    let mut tests = "".to_string();
-    let mut output = "".to_string();
-
-    // read states from file "state.md"
-    let states_str = std::fs::read_to_string("state.md").unwrap();
-    run_state_machine(&states_str, question, &mut code, &mut dependencies, &mut tests, &mut output);
-    println!("{}\n{}\n{}", code, dependencies, tests);
-}
+use crate::build_tool::{build_tool, create_project};
+use crate::cache::Cache;
+use crate::llm_api::llm_request;
+use crate::llm_parser::{extract_code, extract_number};
+use crate::llm_prompt::Prompt;
 
 
-
-fn run_state_machine(
+pub fn run_state_machine(
     states_str_var: &str,
     question: &str,
     code: &mut String,
     dependencies: &mut String,
     tests: &mut String,
     output: &mut String,
+    prompt: &Prompt,
+    cache:  &mut Cache,
+    lang: &str,
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
     let mut current_state_params: HashMap<String, String> = HashMap::new();
     loop {
         let state_name = current_state_name.as_str();
-        println!("{}", current_state_name);
-        println!("{:#?}", current_state_params);
+        println!("State name: {}", current_state_name);
+        println!("Current state params: {:#?}", current_state_params);
+        println!("Code: {}", code);
+        println!("Dependencies: {}", dependencies);
+        println!("Tests: {}", tests);
+        println!("Output: {}", output);
         let state_type = extract_state_type(state_name);
         let state_params = extract_state_params(state_name);
         let current_state = states.get(state_name).unwrap();
         match state_type.as_str() {
             "llm_request" => {
                 let array_src = extract_param_array(state_params[1]);
-                let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests, current_state_params);
-                let result = llm_request(state_params[0].replace("\"","").as_str(), &array);
+                let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests, output, current_state_params);
+                println!("{:#?}", array);
+                let result = llm_request(state_params[0].replace("\"","").as_str(), &array, cache, prompt);
 
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
@@ -69,13 +64,32 @@ fn run_state_machine(
                 continue;
             }
             "create_project" => {
-                if state_params.contains(&"code") {
-                    update_global_vars("code", state_params.iter().next().unwrap(), code, dependencies, tests, output);
+                if current_state_params.contains_key("code") {
+                    let code_param = current_state_params.get("code").unwrap();
+                    update_global_vars("code", code_param, code, dependencies, tests, output);
                 } else {
-                    update_global_vars("code", "", code, dependencies, tests, output);
+                    if !state_params.contains(&"code") {
+                        update_global_vars("code", "", code, dependencies, tests, output);
+                    }
+                }
+                if current_state_params.contains_key("dependencies") {
+                    let dependencies_param = current_state_params.get("dependencies").unwrap();
+                    update_global_vars("dependencies", dependencies_param, code, dependencies, tests, output);
+                } else {
+                    if !state_params.contains(&"dependencies") {
+                        update_global_vars("dependencies", "", code, dependencies, tests, output);
+                    }
+                }
+                if current_state_params.contains_key("tests") {
+                    let tests_param = current_state_params.get("tests").unwrap();
+                    update_global_vars("tests", tests_param, code, dependencies, tests, output);
+                } else {
+                    if !state_params.contains(&"tests") {
+                        update_global_vars("tests", "", code, dependencies, tests, output);
+                    }
                 }
 
-                create_project(code, dependencies, tests);
+                create_project(lang, code, dependencies, tests);
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 current_state_name = next_state_name;
                 current_state_params = HashMap::new();
@@ -83,7 +97,7 @@ fn run_state_machine(
                 continue;
             }
             "build_tool" => {
-                let result = build_tool(state_params[0]);
+                let result:(bool, String) = build_tool(lang, &state_params[0].replace("\"",""), cache);
                 let param_first_name = result.0.to_string();
                 let param_first_name_value = result.0.to_string();
                 let param_second_name = "output".to_string();
@@ -107,8 +121,18 @@ fn run_state_machine(
 
             }
             "extract_number" => {
-                let result = extract_number(current_state_params.get(state_params[0]).unwrap());
-                let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                let result = extract_number(current_state_params.get(state_params[0]).unwrap()).to_string();
+                let mut next_state_name: String = "".to_string();
+                for (key, value) in current_state.transitions.iter() {
+                    next_state_name = if value == &result {
+                        key.to_string()
+                    } else {
+                        continue;
+                    };
+                }
+                if &next_state_name == "" {
+                    panic!("Transition not found");
+                }
                 let mut next_state_params = HashMap::new();
                 next_state_params.insert(result.to_string(), result.to_string());
 
@@ -131,7 +155,7 @@ fn run_state_machine(
     }
 }
 
-fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: &str, tests: &str, params: HashMap<String, String>) -> Vec<String> {
+fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: &str, tests: &str, output: &str ,params: HashMap<String, String>) -> Vec<String> {
     let mut new_array = Vec::new();
     for item in array {
         match item {
@@ -139,6 +163,7 @@ fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: 
             "code" => new_array.push(code.to_string()),
             "dependencies" => new_array.push(dependencies.to_string()),
             "tests" => new_array.push(tests.to_string()),
+            "output" => new_array.push(output.to_string()),
             &_ => {
                 if params.contains_key(item) {
                     new_array.push(params.get(item).unwrap().to_string())
@@ -166,6 +191,7 @@ fn extract_first_state(states_str_var: &str) -> String {
 }
 #[derive(Debug)]
 pub struct State {
+    #[allow(dead_code)]
     name: String,
     transitions: HashMap<String, String>, // state_name, condition
 }
@@ -228,8 +254,40 @@ fn extract_state_params(state_str: &str) -> Vec<&str> {
     if let Some(start) = state_str.find('(') {
         if let Some(end) = state_str.rfind(')') {
             let params_str = &state_str[start + 1..end];
-            // Разделяем строку на два элемента по первой запятой
-            params_str.splitn(2, ',').map(|s| s.trim()).collect()
+            let mut params = Vec::new();
+            let mut current = 0;
+            let mut in_quotes = false;
+            let mut bracket_depth = 0;
+
+            for (i, c) in params_str.char_indices() {
+                match c {
+                    '"' => {
+                        in_quotes = !in_quotes;
+                    },
+                    '[' => {
+                        if !in_quotes {
+                            bracket_depth += 1;
+                        }
+                    },
+                    ']' => {
+                        if !in_quotes && bracket_depth > 0 {
+                            bracket_depth -= 1;
+                        }
+                    },
+                    ',' => {
+                        if !in_quotes && bracket_depth == 0 {
+                            // Split here
+                            params.push(params_str[current..i].trim());
+                            current = i + 1;
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            // Push the last parameter
+            params.push(params_str[current..].trim());
+
+            params
         } else {
             vec![]
         }
@@ -242,45 +300,10 @@ fn extract_param_array(param_str: &str) -> Vec<&str> {
     let state_params = state_params.split("]").collect::<Vec<&str>>()[0];
     state_params.split(",").collect::<Vec<&str>>()
 }
-fn create_project(_code: &str, _dependencies: &str, _tests: &str) {
-    println!("Creating project");
-    //
-}
-
-fn llm_request(prompt: &str, params: &Vec<String>) -> String {
-    println!("LLM Request: {}", prompt);
-    println!("LLM Params: {:#?}", params);
-    format!("AI response on prompt:{}", prompt)
-}
-
-fn extract_code(response: &str) -> String {
-    println!("Extracting code from response: {}", response);
-    "Extracted code".to_string()
-}
-
-fn extract_number(_response: &str) -> i32 {
-    let mut rng = rand::thread_rng();
-    let mut random = rng.gen_range(1..=2);
-    if !RANDOM {
-        random = 1;
-    }
-    println!("Extracted number: {}", random);
-    random
-}
-
-fn build_tool(command: &str) -> (bool, String) {
-    println!("Building project with command: {}", command);
-    let mut random = rand::random::<i32>() % 2 == 0;
-    if !RANDOM {
-        random = true;
-    }
-    (random, format!("Build output: {}", command).to_string())
-}
-
 
 mod tests {
-    use crate::state_machine::{extract_states};
-    const STATES: &str = r#"
+
+    const _STATES: &str = r#"
 ```mermaid
 stateDiagram
 [*] --> llm_request("generate_code_prompt_template",[question]) : question
@@ -305,8 +328,8 @@ finish --> [*]
 
     #[test]
     fn test_extract_state_params() {
-        let state_str = r#"llm_request("build_dependencies_req_prompt_template",[question,code,output])"#;
-        assert_eq!(super::extract_state_params(state_str), vec!["\"build_dependencies_req_prompt_template\"","[question,code,output]"]);
+        let state_str = r#"llm_request("build_dependencies_req_prompt_template",abc,[question,code,output])"#;
+        assert_eq!(super::extract_state_params(state_str), vec!["\"build_dependencies_req_prompt_template\"","abc","[question,code,output]"]);
     }
 
     #[test]
@@ -317,17 +340,13 @@ finish --> [*]
 
     #[test]
     fn test_extract_states() {
-        println!("{:#?}", extract_states(STATES));
+        println!("{:#?}", extract_states(_STATES));
     }
 
     #[test]
     fn test_extract_first_state() {
-        let first_state = super::extract_first_state(STATES);
+        let first_state = super::extract_first_state(_STATES);
         assert_eq!(first_state, "llm_request(\"generate_code_prompt_template\",[question])");
-    }
-    #[test]
-    fn test_main() {
-        super::main();
     }
 
 }

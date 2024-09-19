@@ -35,7 +35,7 @@ impl Prompt {
 
     }
 
-    pub fn create(&self, key: &str, params: Vec<&str>) -> String {
+    pub fn create(&self, key: &str, params: &Vec<String>) -> String {
         let mut prompt = self.prompts.get(key).unwrap().clone();
         prompt = construct_prompt(&prompt, params);
         prompt
@@ -44,11 +44,14 @@ impl Prompt {
 
 }
 
-fn construct_prompt(template: &str, replace: Vec<&str>) -> String {
+fn construct_prompt(template: &str, replace: &Vec<String>) -> String {
     let mut prompt = template.to_string();
     for (i, r) in replace.iter().enumerate() {
         let placeholder = format!("{{{{{{{}}}}}}}", i); // "{{{0}}}"
         prompt = prompt.replace(&placeholder, r);
+    }
+    if prompt.contains("{{{") {
+        panic!("Not all placeholders were replaced");
     }
     prompt
 }
@@ -104,15 +107,15 @@ Result of compilation:
         std::fs::write("test.p", content).unwrap();
         let prompt = Prompt::new("test.p");
         println!("{:#?}", prompt);
-        assert_eq!(prompt.create("generate_code_prompt_template", vec!["123"]), "\n123\n\nWrite on Rust language code of this function (without example of usage like main function):\n```rust\nfn solution(\n");
-        assert_eq!(prompt.create("rewrite_code_prompt_template", vec!["123"]), "\n123\nRust language code of this function:\n```rust\n{{{1}}}\n```\nTry to compile this code:\n'''bash\ncargo build\n'''\nResult of compilation:\n'''console\n{{{2}}}\n'''\n");
+        assert_eq!(prompt.create("generate_code_prompt_template", &vec!["123".to_string()]), "\n123\n\nWrite on Rust language code of this function (without example of usage like main function):\n```rust\nfn solution(\n");
+        assert_eq!(prompt.create("rewrite_code_prompt_template", &vec!["123".to_string()]), "\n123\nRust language code of this function:\n```rust\n{{{1}}}\n```\nTry to compile this code:\n'''bash\ncargo build\n'''\nResult of compilation:\n'''console\n{{{2}}}\n'''\n");
         std::fs::remove_file("test.p").unwrap();
     }
     #[test]
     fn test_construct_prompt() {
         let template = "This is a template with {{{0}}} and {{{1}}}";
-        let replace = vec!["first", "second"];
+        let replace = vec!["first".to_string(), "second".to_string()];
         let expected = "This is a template with first and second";
-        assert_eq!(construct_prompt(template, replace), expected);
+        assert_eq!(construct_prompt(template, &replace), expected);
     }
 }

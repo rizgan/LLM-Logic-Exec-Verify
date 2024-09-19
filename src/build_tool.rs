@@ -1,7 +1,7 @@
 use crate::cache::Cache;
 use crate::{DEBUG};
 
-pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (i32, String) {
+pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (bool, String) {
     if lang == "rust" {
         println!("Exec: cargo {}", command);
         let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
@@ -50,19 +50,20 @@ pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (i32, String)
         }
         println!("===============");
 
-        (exit_code,extract_error_message(lang, &output, exit_code))
+        let exit_code_bool = exit_code == 0;
+        (exit_code_bool,extract_error_message(lang, &output, exit_code))
     } else {
         panic!("Unsupported language: {}", lang);
     }
 }
 
-pub fn create_project(lang: &str, code: &str, test: &str, dependencies: &str) {
+pub fn create_project(lang: &str, code: &str, dependencies: &str, tests: &str) {
     let code_str = if code == "" {
         ""
     } else {
         "'code'"
     };
-    let test_str = if test == "" {
+    let test_str = if tests == "" {
         ""
     } else {
         "'test'"
@@ -75,7 +76,7 @@ pub fn create_project(lang: &str, code: &str, test: &str, dependencies: &str) {
     };
 
     println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
-    println!("{}\n{}\n{}", dependencies, code, test);
+    println!("{}\n{}\n{}", dependencies, code, tests);
     println!("====================");
 
     if lang == "rust" {
@@ -93,7 +94,7 @@ pub fn create_project(lang: &str, code: &str, test: &str, dependencies: &str) {
             std::fs::create_dir(&src_path).unwrap();
         }
         let main_rs = r#"fn main() {}"#;
-        std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, test)).unwrap();
+        std::fs::write(&main_path, format!("{}\n{}\n{}", main_rs, code, tests)).unwrap();
 
         std::fs::write(&cargo_path, format!(r#"
 [package]

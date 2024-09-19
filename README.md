@@ -7,8 +7,9 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [State Diagram](#state-diagram)
 - [Contributing](#contributing)
+- [For contributors](#for-contributors)
+- [Versions history](#versions-history)
 
 ## Features
 
@@ -147,5 +148,27 @@ Finished
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request for any improvements.
+I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
+1. Read "[Contributor License Agreement (CLA)](CLA)"
+2. Do "git clone" 
+3. Create branch with your pull request
+4. Create pull request to main branch
 
+## For contributors
+
+![Logic](logic.png)
+
+
+## Versions history
+
+### 0.1.0 - Prototype
+  - Code Generation
+  - Automated Compilation
+  - Dependency Resolution
+  - Test Generation
+  - Error Correction
+  - Caching Mechanism 
+
+### 0.2.0 - State Machine
+  - Move prompts from code to "rust.prompt" file
+  - Move logic from code to "logic.md" file 

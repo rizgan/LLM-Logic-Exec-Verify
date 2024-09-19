@@ -2,11 +2,14 @@ use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use crate::cache::Cache;
+use crate::llm_prompt::Prompt;
 
-pub fn llm_request(prompt: &str, cache: &mut Cache) -> String {
+pub fn llm_request(prompt_template: &str, params: &Vec<String>, cache: &mut Cache, prompt: &Prompt) -> String {
+    let prompt = prompt.create(prompt_template, params);
     let stop = vec!["**Explanation".to_string()];
     let request = OllamaRequest {
         model: "gemma2:27b".to_string(),
+        // model: "gemma2:2b".to_string(),
         prompt: prompt.to_string(),
         stream: false,
         options: OllamaOptions {
