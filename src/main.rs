@@ -37,7 +37,7 @@ fn main() {
 
 
     create_project(lang, &code, "", "");
-    let (mut exit_code, mut output) = cargo("build", &mut cache);
+    let (mut exit_code, mut output) = build_tool(lang, "build", &mut cache);
 
     'code_generation: loop {
         if code_attempts >= number_of_attempts {
@@ -82,7 +82,7 @@ fn main() {
 
                     create_project(lang, &code, "", &dependencies);
                 }
-                let (exit_code_immut, output_immut) = cargo("build", &mut cache);
+                let (exit_code_immut, output_immut) = build_tool(lang, "build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
                 if exit_code == 0 {
@@ -109,7 +109,7 @@ fn main() {
                         }
 
 
-                        let (exit_code_immut, output_immut) = cargo("test", &mut cache);
+                        let (exit_code_immut, output_immut) = build_tool(lang, "test", &mut cache);
                         exit_code = exit_code_immut;
                         output = output_immut;
                         if exit_code == 0 {
@@ -165,7 +165,7 @@ fn main() {
                 dependencies = extract_code(&build_dependencies_result);
             }
             create_project(lang, &code, "", &dependencies);
-            let (exit_code_immut, output_immut) = cargo("build", &mut cache);
+            let (exit_code_immut, output_immut) = build_tool(lang, "build", &mut cache);
             if exit_code_immut != 0 {
                 output = output_immut;
 
@@ -176,7 +176,7 @@ fn main() {
                 let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
                 code = extract_code(&rewrite_code_result);
                 create_project(lang, &code, "", &dependencies);
-                let (exit_code_immut, output_immut) = cargo("build", &mut cache);
+                let (exit_code_immut, output_immut) = build_tool(lang, "build", &mut cache);
                 exit_code = exit_code_immut;
                 output = output_immut;
             } else {
@@ -188,56 +188,59 @@ fn main() {
 }
 
 
-fn cargo(command: &str, cache: &mut Cache) -> (i32, String) {
-    println!("Run: cargo {}", command);
-    let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
-        std::fs::read_to_string("sandbox/src/main.rs").unwrap()
-    } else {
-        "".to_string()
-    };
-    let dependencies = if std::path::Path::new("sandbox/Cargo.toml").exists() {
-        std::fs::read_to_string("sandbox/Cargo.toml").unwrap()
-    } else {
-        "".to_string()
-    };
-    let src= format!("{}\n{}", dependencies, code);
+fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (i32, String) {
+    if lang == "rust" {
+        println!("Exec: cargo {}", command);
+        let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
+            std::fs::read_to_string("sandbox/src/main.rs").unwrap()
+        } else {
+            "".to_string()
+        };
+        let dependencies = if std::path::Path::new("sandbox/Cargo.toml").exists() {
+            std::fs::read_to_string("sandbox/Cargo.toml").unwrap()
+        } else {
+            "".to_string()
+        };
+        let src= format!("{}\n{}", dependencies, code);
 
-    let key = format!("{}{}", command, src);
-    let result_str_opt = cache.get(&key);
-    let result_str = match result_str_opt {
-        None => {
+        let key = format!("{}{}", command, src);
+        let result_str_opt = cache.get(&key);
+        let result_str = match result_str_opt {
+            None => {
 
-            let output = std::process::Command::new("cargo")
-                .arg(command)
-                .current_dir("sandbox")
-                .output()
-                .unwrap();
-            let exit_code = output.status.code().unwrap();
-            let std_out = String::from_utf8(output.stdout).unwrap();
-            let std_err = String::from_utf8(output.stderr).unwrap();
-            let output = std_err + &std_out;
-            let tuple: (i32, String) = (exit_code, output);
-            let json_str = serde_json::to_string(&tuple).unwrap();
-            cache.set(key, json_str.clone());
-            json_str
+                let output = std::process::Command::new("cargo")
+                    .arg(command)
+                    .current_dir("sandbox")
+                    .output()
+                    .unwrap();
+                let exit_code = output.status.code().unwrap();
+                let std_out = String::from_utf8(output.stdout).unwrap();
+                let std_err = String::from_utf8(output.stderr).unwrap();
+                let output = std_err + &std_out;
+                let tuple: (i32, String) = (exit_code, output);
+                let json_str = serde_json::to_string(&tuple).unwrap();
+                cache.set(key, json_str.clone());
+                json_str
+            }
+            Some(result) => {
+                result.to_string()
+            }
+        };
+        let parsed: (i32, String) = serde_json::from_str(&result_str).unwrap();
+
+        let exit_code = parsed.0;
+        let output = parsed.1;
+
+        println!("Exit code: {}", exit_code);
+        if DEBUG {
+            println!("Output: {}", output);
         }
-        Some(result) => {
-            result.to_string()
-        }
-    };
-    let parsed: (i32, String) = serde_json::from_str(&result_str).unwrap();
+        println!("===============");
 
-    let exit_code = parsed.0;
-    let output = parsed.1;
-
-
-    println!("Exit code: {}", exit_code);
-    if DEBUG {
-        println!("Output: {}", output);
+        (exit_code,extract_error_message(&output, exit_code))
+    } else {
+        panic!("Unsupported language: {}", lang);
     }
-    println!("===============");
-
-    (exit_code,extract_error_message(&output, exit_code))
 }
 fn create_project(lang: &str, code: &str, test: &str, dependencies: &str) {
     let code_str = if code == "" {
