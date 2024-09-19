@@ -4,6 +4,7 @@ mod build_tool;
 
 mod llm_api;
 mod llm_parser;
+mod state_machine;
 
 use crate::build_tool::{build_tool, create_project};
 use crate::llm_api::llm_request;
