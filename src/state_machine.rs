@@ -40,42 +40,38 @@ fn run_state_machine(
     let mut current_state_name: String = extract_first_state(states_str_var);
     let mut current_state_params: HashMap<String, String> = HashMap::new();
     loop {
-        match current_state_name.as_str() {
-            state_name => {
-                println!("{}", current_state_name);
-                println!("{:#?}", current_state_params);
-                let state_type = extract_state_type(state_name);
-                let state_params = extract_state_params(state_name);
-                let current_state = states.get(state_name).unwrap();
-                match state_type.as_str() {
-                    "llm_request" => {
-                        let array_src = extract_param_array(state_params[1]);
-                        let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests);
-                        let result = llm_request(state_params[0].replace("\"","").as_str(), &array);
+        let state_name = current_state_name.as_str();
+        println!("{}", current_state_name);
+        println!("{:#?}", current_state_params);
+        let state_type = extract_state_type(state_name);
+        let state_params = extract_state_params(state_name);
+        let current_state = states.get(state_name).unwrap();
+        match state_type.as_str() {
+            "llm_request" => {
+                let array_src = extract_param_array(state_params[1]);
+                let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests);
+                let result = llm_request(state_params[0].replace("\"","").as_str(), &array);
 
-                        let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
-                        let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
-                        let mut next_state_params = HashMap::new();
-                        next_state_params.insert(param, result);
+                let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
+                let mut next_state_params = HashMap::new();
+                next_state_params.insert(param, result);
 
-                        current_state_name = next_state_name;
-                        current_state_params = next_state_params;
-                        println!("===============");
+                current_state_name = next_state_name;
+                current_state_params = next_state_params;
+                println!("===============");
 
-                        continue;
-                    }
-                    "finish" => {
-                        return;
-                    }
-                    &_ => {
+                continue;
+            }
+            "finish" => {
+                return;
+            }
+            &_ => {
 
-                        current_state_params = HashMap::new();
-                        current_state_name = "finish".to_string();
-                        println!("===============");
-                        continue;
-                    }
-                }
-
+                current_state_params = HashMap::new();
+                current_state_name = "finish".to_string();
+                println!("===============");
+                continue;
             }
         }
     }
