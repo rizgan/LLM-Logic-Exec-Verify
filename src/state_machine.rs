@@ -38,13 +38,32 @@ fn run_state_machine(
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
+    let mut current_state_params: HashMap<String, String> = HashMap::new();
     let mut next_state_name: String = "finish".to_string();
+    let mut next_state_params: HashMap<String, String> = HashMap::new();
     loop {
         match current_state_name.as_str() {
             state_name => {
+                println!("{}", current_state_name);
+                println!("{:#?}", current_state_params);
+                println!("===============");
                 let state_type = extract_state_type(state_name);
                 let state_params = extract_state_params(state_name);
+                let current_state = states.get(state_name).unwrap();
                 match state_type.as_str() {
+                    "llm_request" => {
+                        let array_src = extract_param_array(state_params[1]);
+                        let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests);
+                        let result = llm_request(state_params[0].replace("\"","").as_str(), &array);
+
+                        let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
+                        let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
+                        next_state_params = HashMap::new();
+                        next_state_params.insert(param, result);
+                    }
+                    "finish" => {
+                        return;
+                    }
                     &_ => {
 
                         next_state_name = "finish".to_string();
@@ -58,9 +77,24 @@ fn run_state_machine(
                 return;
             }
         }
-        current_state_name = next_state_name;
+        current_state_name = next_state_name.clone();
+        current_state_params = next_state_params.clone();
 
     }
+}
+
+fn replace_in_array(array: Vec<&str>, question: &str, code: &str, dependencies: &str, tests: &str) -> Vec<String> {
+    let mut new_array = Vec::new();
+    for item in array {
+        match item {
+            "question" => new_array.push(question.to_string()),
+            "code" => new_array.push(code.to_string()),
+            "dependencies" => new_array.push(dependencies.to_string()),
+            "tests" => new_array.push(tests.to_string()),
+            &_ => new_array.push(item.to_string())
+        }
+    }
+    new_array
 }
 
 
@@ -130,6 +164,9 @@ fn extract_state_type(state_str: &str) -> String {
     state_type.to_string()
 }
 fn extract_state_params(state_str: &str) -> Vec<&str> {
+    if !state_str.contains("(") {
+        return vec![];
+    }
     let state_params = state_str.split("(").collect::<Vec<&str>>()[1];
     let state_params = state_params.split(")").collect::<Vec<&str>>()[0];
     state_params.split(",").collect::<Vec<&str>>()
@@ -143,8 +180,10 @@ fn create_project(code: &str, dependencies: &str, tests: &str) {
     todo!()
 }
 
-fn llm_request(prompt: &str, params: Vec<&str>) -> String {
-    todo!()
+fn llm_request(prompt: &str, params: &Vec<String>) -> String {
+    println!("LLM Request: {}", prompt);
+    println!("LLM Params: {:#?}", params);
+    "AI response".to_string()
 }
 
 fn extract_code(response: &str) -> String {
@@ -191,4 +230,9 @@ mod tests {
         let first_state = super::extract_first_state(states_str);
         assert_eq!(first_state, "llm_request(\"generate_code_prompt_template\",[question])");
     }
+    #[test]
+    fn test_main() {
+        super::main();
+    }
+
 }
