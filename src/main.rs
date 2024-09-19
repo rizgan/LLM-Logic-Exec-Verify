@@ -1,4 +1,5 @@
 mod cache;
+mod prompt;
 
 use std::time::Duration;
 use reqwest::blocking::Client;
@@ -10,181 +11,7 @@ const DEBUG: bool = false;
 fn main() {
 
     let mut cache = cache::Cache::new();
-
-    let generate_code_prompt_template = r#"
-{{{0}}}
-
-Write on Rust language code of this function (without example of usage like main function):
-```rust
-fn solution(
-"#;
-
-let rewrite_code_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-Try to compile this code:
-'''bash
-cargo build
-'''
-Result of compilation:
-'''console
-{{{2}}}
-'''
-
-Rewrite code for fixing errors of this function (without example of usage like main function):
-```rust
-"#;
-
-
- let build_dependencies_req_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-```bash
-cargo build
-```
-
-Result of compilation:
-```console
-{{{2}}}
-```
-
-For this function is required some dependencies in Cargo.toml file?
-1. Some dependencies are required
-2. All dependencies are already included in standard library
-Answer(just number):"#;
-
-
-    let build_dependencies_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-Write dependencies to Cargo.toml file (only dependencies section without Rust language code):
-```toml
-[package]
-name = "sandbox"
-version = "0.1.0"
-edition = "2018"
-
-[dependencies]
-"#;
-
-
-    let rewrite_dependencies_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-Cargo.toml file
-```toml
-[package]
-name = "sandbox"
-version = "0.1.0"
-edition = "2018"
-
-{{{2}}}
-```
-
-cargo build
-
-Result of compilation:
-
-```console
-{{{3}}}
-```
-
-Rewrite dependencies for fixing error to Cargo.toml file (only dependencies section without Rust language code without comments):
-```toml
-[dependencies]
-"#;
-
-
-    let generate_test_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-Write on Rust language code of test for this function (only test code without function implementation):
-```rust
-#[cfg(test)]
-mod tests {
-use super::*;
-
-#[test]
-fn test_solution(
-"#;
-    let rewrite_test_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-Test code for this function:
-```rust
-{{{2}}}
-```
-
-'''bash
-cargo test
-'''
-
-Result of testing:
-'''console
-{{{3}}}
-'''
-
-Rewrite test code for fixing error (only test code without function implementation):
-```rust
-#[cfg(test)]
-mod tests {
-use super::*;
-
-#[test]
-fn test_solution(
-"#;
-
-
-    let rewrite_code_req_prompt_template = r#"
-{{{0}}}
-Rust language code of this function:
-```rust
-{{{1}}}
-```
-
-Test code for this function:
-```rust
-{{{2}}}
-```
-
-'''bash
-cargo test
-'''
-
-Result of testing:
-'''console
-{{{3}}}
-'''
-
-Where are current erros placed ?
-1. In code. In 'solution' function
-2. In test. In 'test_solution' function
-Answer(just number):
-"#;
-
+    let prompt = prompt::Prompt::new("rust.p");
 
     let number_of_attempts = 3;
 
@@ -200,8 +27,8 @@ Answer(just number):
     let mut code_test = "".to_string();
 
 
-    let generate_code_prompt = construct_prompt(
-        generate_code_prompt_template,
+    let generate_code_prompt = prompt.create(
+        "generate_code_prompt_template",
         vec![&explanation],
     );
     println!("===============");
@@ -236,16 +63,16 @@ Answer(just number):
                 if exit_code == 0 &&  (dependencies_attempts == 1 || dependencies == "")  {
 
 
-                    let build_dependencies_req_prompt = construct_prompt(
-                        build_dependencies_req_prompt_template,
+                    let build_dependencies_req_prompt = prompt.create(
+                        "build_dependencies_req_prompt_template",
                         vec![&explanation, &code, &output],
                     );
                     let build_dependencies_req_result = llm_request(&build_dependencies_req_prompt, &mut cache);
                     let build_dependencies_req = build_dependencies_req_result.trim();
                     if extract_number(build_dependencies_req) == 1 {
 
-                        let build_dependencies_prompt = construct_prompt(
-                            build_dependencies_prompt_template,
+                        let build_dependencies_prompt = prompt.create(
+                            "build_dependencies_prompt_template",
                             vec![&explanation, &code],
                         );
                         let build_dependencies_result = llm_request(&build_dependencies_prompt, &mut cache);
@@ -271,8 +98,8 @@ Answer(just number):
 
                         if exit_code == 0 {
 
-                            let generate_test_prompt = construct_prompt(
-                                generate_test_prompt_template,
+                            let generate_test_prompt = prompt.create(
+                                "generate_test_prompt_template",
                                 vec![&explanation, &code],
                             );
                             let generation_test_result = llm_request(&generate_test_prompt, &mut cache);
@@ -291,21 +118,21 @@ Answer(just number):
                             return;
                         } else {
 
-                            let rewrite_code_req_prompt_template_prompt = construct_prompt(
-                                rewrite_code_req_prompt_template,
+                            let rewrite_code_req_prompt_template_prompt = prompt.create(
+                                "rewrite_code_req_prompt_template",
                                 vec![&explanation, &code, &code_test, &output],
                             );
                             let rewrite_code_req_result = llm_request(&rewrite_code_req_prompt_template_prompt, &mut cache);
                             if extract_number(&rewrite_code_req_result) == 1 {
-                                let rewrite_code_prompt = construct_prompt(
-                                    rewrite_code_prompt_template,
+                                let rewrite_code_prompt = prompt.create(
+                                    "rewrite_code_prompt_template",
                                     vec![&explanation, &code, &output],
                                 );
                                 let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
                                 code = extract_code(&rewrite_code_result);
                             } else {
-                                let rewrite_test_prompt = construct_prompt(
-                                    rewrite_test_prompt_template,
+                                let rewrite_test_prompt = prompt.create(
+                                    "rewrite_test_prompt_template",
                                     vec![&explanation, &code, &code_test, &output],
                                 );
                                 let rewrite_test_result = llm_request(&rewrite_test_prompt, &mut cache);
@@ -314,8 +141,8 @@ Answer(just number):
                         }
                     }
                 } else {
-                    let rewrite_dependencies_prompt = construct_prompt(
-                        rewrite_dependencies_prompt_template,
+                    let rewrite_dependencies_prompt = prompt.create(
+                        "rewrite_dependencies_prompt_template",
                         vec![&explanation, &code, &dependencies, &output],
                     );
                     let rewrite_dependencies_result = llm_request(&rewrite_dependencies_prompt, &mut cache);
@@ -323,15 +150,15 @@ Answer(just number):
                 }
             }
         } else {
-            let build_dependencies_req_prompt = construct_prompt(
-                build_dependencies_req_prompt_template,
+            let build_dependencies_req_prompt = prompt.create(
+                "build_dependencies_req_prompt_template",
                 vec![&explanation, &code, &output],
             );
             let build_dependencies_req_result = llm_request(&build_dependencies_req_prompt, &mut cache);
             let build_dependencies_req = build_dependencies_req_result.trim();
             if extract_number(build_dependencies_req) == 1 {
-                let build_dependencies_prompt = construct_prompt(
-                    build_dependencies_prompt_template,
+                let build_dependencies_prompt = prompt.create(
+                    "build_dependencies_prompt_template",
                     vec![&explanation, &code],
                 );
                 let build_dependencies_result = llm_request(&build_dependencies_prompt, &mut cache);
@@ -342,8 +169,8 @@ Answer(just number):
             if exit_code_immut != 0 {
                 output = output_immut;
 
-                let rewrite_code_prompt = construct_prompt(
-                    rewrite_code_prompt_template,
+                let rewrite_code_prompt = prompt.create(
+                    "rewrite_code_prompt_template",
                     vec![&explanation, &code, &output],
                 );
                 let rewrite_code_result = llm_request(&rewrite_code_prompt, &mut cache);
@@ -459,14 +286,7 @@ edition = "2018"
 {}
 "#, dependencies )).unwrap();
 }
-fn construct_prompt(template: &str, replace: Vec<&str>) -> String {
-    let mut prompt = template.to_string();
-    for (i, r) in replace.iter().enumerate() {
-        let placeholder = format!("{{{{{{{}}}}}}}", i); // "{{{0}}}"
-        prompt = prompt.replace(&placeholder, r);
-    }
-    prompt
-}
+
 fn extract_code(input: &str) -> String {
     let mut code = "".to_string();
     let mut in_code_block = false;
@@ -634,13 +454,6 @@ mod tests {
         assert_eq!(extract_code(input), expected);
     }
 
-    #[test]
-    fn test_construct_prompt() {
-        let template = "This is a template with {{{0}}} and {{{1}}}";
-        let replace = vec!["first", "second"];
-        let expected = "This is a template with first and second";
-        assert_eq!(construct_prompt(template, replace), expected);
-    }
 
     #[test]
     fn test_extract_number() {
