@@ -38,6 +38,7 @@ fn run_state_machine(
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
+    let mut next_state_name: String = "finish".to_string();
     loop {
         match current_state_name.as_str() {
             state_name => {
@@ -46,7 +47,7 @@ fn run_state_machine(
                 match state_type.as_str() {
                     &_ => {
 
-
+                        next_state_name = "finish".to_string();
                         continue;
                     }
                 }
@@ -54,10 +55,10 @@ fn run_state_machine(
             }
 
             "finish" => {
-
-                break;
+                return;
             }
         }
+        current_state_name = next_state_name;
 
     }
 }
