@@ -250,7 +250,7 @@ fn create_project(_code: &str, _dependencies: &str, _tests: &str) {
 fn llm_request(prompt: &str, params: &Vec<String>) -> String {
     println!("LLM Request: {}", prompt);
     println!("LLM Params: {:#?}", params);
-    format!("AI response on prompt:{} ", prompt)
+    format!("AI response on prompt:{}", prompt)
 }
 
 fn extract_code(response: &str) -> String {
