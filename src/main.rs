@@ -18,7 +18,7 @@ fn main() {
     println!("Explain what the function should do:");
     let mut question;
     let mut lines = vec![];
-    let mut start_sec = 0 as u64;
+    let mut start_sec = 0 as u128;
     loop {
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
@@ -35,12 +35,12 @@ fn main() {
             lines.push(line.clone());
         }
 
-        let now_sec = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let now_sec = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
 
         if start_sec == 0  {
             start_sec = now_sec;
         } else {
-            if now_sec - start_sec < 1 {
+            if now_sec - start_sec < 100 {
                 continue;
             } else {
                 if line.ends_with("\\\r\n") {
@@ -51,6 +51,8 @@ fn main() {
         }
     }
     question = lines.join("");
+    question.pop();
+    question.pop();
 
     let mut code = "".to_string();
     let mut dependencies = "".to_string();
