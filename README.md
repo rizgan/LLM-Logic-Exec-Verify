@@ -25,8 +25,7 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 
 ```mermaid
 stateDiagram
-[*] --> Start
-Start --> GenerateCode
+[*] --> GenerateCode
 GenerateCode --> CompileCode
 CompileCode --> CompilationSuccess : Compilation successful
 CompileCode --> CheckDependencies : Compilation failed
