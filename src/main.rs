@@ -16,7 +16,27 @@ fn main() {
 
     println!("Explain what the function should do:");
     let mut question = String::new();
-    std::io::stdin().read_line(&mut question).unwrap();
+    let mut lines = vec![];
+    let mut start_sec = 0 as u64;
+    loop {
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        lines.push(line);
+        let now_sec = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        if start_sec == 0 {
+            start_sec = now_sec;
+        } else {
+            if now_sec - start_sec < 1 {
+                continue;
+            } else {
+                break
+            }
+        }
+        if question.trim() != "" {
+            break;
+        }
+    }
+    question = lines.join("");
 
     let mut code = "".to_string();
     let mut dependencies = "".to_string();
