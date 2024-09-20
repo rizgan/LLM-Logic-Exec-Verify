@@ -47,8 +47,8 @@ pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (bool, String
         println!("Exit code: {}", exit_code);
         if DEBUG {
             println!("Output: {}", output);
+            println!("===============");
         }
-        println!("===============");
 
         let exit_code_bool = exit_code == 0;
         (exit_code_bool,extract_error_message(lang, &output, exit_code))
@@ -77,7 +77,6 @@ pub fn create_project(lang: &str, code: &str, dependencies: &str, tests: &str) {
 
     println!("Create sandbox project with: {} {} {}", code_str,  dependencies_str, test_str);
     println!("{}\n{}\n{}", dependencies, code, tests);
-    println!("====================");
 
     if lang == "rust" {
         let sandbox_path = "sandbox";

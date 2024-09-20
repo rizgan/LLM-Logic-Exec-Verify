@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::build_tool::{build_tool, create_project};
 use crate::cache::Cache;
+use crate::DEBUG;
 use crate::llm_api::llm_request;
 use crate::llm_parser::{extract_code, extract_number};
 use crate::llm_prompt::Prompt;
@@ -24,10 +25,12 @@ pub fn run_state_machine(
         let state_name = current_state_name.as_str();
         println!("State name: {}", current_state_name);
         println!("Current state params: {:#?}", current_state_params);
-        println!("Code: {}", code);
-        println!("Dependencies: {}", dependencies);
-        println!("Tests: {}", tests);
-        println!("Output: {}", output);
+        if DEBUG {
+            println!("Code: {}", code);
+            println!("Dependencies: {}", dependencies);
+            println!("Tests: {}", tests);
+            println!("Output: {}", output);
+        }
         let state_type = extract_state_type(state_name);
         let state_params = extract_state_params(state_name);
         let current_state = states.get(state_name).unwrap();
@@ -35,7 +38,7 @@ pub fn run_state_machine(
             "llm_request" => {
                 let array_src = extract_param_array(state_params[1]);
                 let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests, output, current_state_params);
-                println!("{:#?}", array);
+                // println!("{:#?}", array);
                 let result = llm_request(state_params[0].replace("\"","").as_str(), &array, cache, prompt);
 
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
@@ -104,7 +107,7 @@ pub fn run_state_machine(
                 let param_second_value = result.1.to_string();
                 update_global_vars("output", &param_second_value, code, dependencies, tests, output);
                 let transition_condition = format!("({},{})", param_first_name, param_second_name);
-                println!("{}", transition_condition);
+                // println!("{}", transition_condition);
                 let mut next_state_name = "".to_string();
                 for (key, value) in current_state.transitions.iter() {
                     if value == &transition_condition {
@@ -118,7 +121,7 @@ pub fn run_state_machine(
                 current_state_name = next_state_name;
                 current_state_params = next_state_params;
                 println!("===============");
-
+                continue;
             }
             "extract_number" => {
                 let result = extract_number(current_state_params.get(state_params[0]).unwrap()).to_string();
@@ -302,7 +305,6 @@ fn extract_param_array(param_str: &str) -> Vec<&str> {
 }
 
 mod tests {
-
     const _STATES: &str = r#"
 ```mermaid
 stateDiagram
@@ -340,7 +342,7 @@ finish --> [*]
 
     #[test]
     fn test_extract_states() {
-        println!("{:#?}", extract_states(_STATES));
+        println!("{:#?}",  crate::state_machine::extract_states(_STATES));
     }
 
     #[test]

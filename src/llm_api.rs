@@ -46,7 +46,6 @@ pub fn llm_request(prompt_template: &str, params: &Vec<String>, cache: &mut Cach
     };
 
     println!("Response: {}", response);
-    println!("===============");
     response
 }
 
