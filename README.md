@@ -167,12 +167,15 @@ I would love to see contributions from the community. If you experience bugs, fe
 
 ## Versions history
 
+### 0.4.0 - State Machine - 20 September 2024
+- Extract_code function replaced by extract_code, extract_dep, extract_test functions
+
 ### 0.3.0 - State Machine - 20 September 2024
 - Support OpenAI API
 
 ### 0.2.0 - State Machine - 19 September 2024
-- Move prompts from code to "rust.prompt" file
-- Move logic from code to "logic.md" file
+- Moved prompts from code to "rust.prompt" file
+- Moved logic from code to "logic.md" file
 
 ### 0.1.0 - Prototype - 17 September 2024
 - Code Generation

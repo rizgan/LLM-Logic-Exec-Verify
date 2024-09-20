@@ -29,8 +29,8 @@ impl LLMApi {
                 let prompt = prompt.create(prompt_template, params);
                 let stop = vec!["**Explanation".to_string()];
                 let request = OllamaRequest {
-                    model: "gemma2:27b".to_string(),
-                    // model: "gemma2:2b".to_string(),
+                    // model: "gemma2:27b".to_string(),
+                    model: "gemma2:2b".to_string(),
                     prompt: prompt.to_string(),
                     stream: false,
                     options: OllamaOptions {

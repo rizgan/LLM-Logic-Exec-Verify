@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::build_tool::{build_tool, create_project};
 use crate::cache::Cache;
 use crate::{DEBUG, MAX_NUMBER_OF_ATTEMPTS};
-use crate::llm_parser::{extract_code, extract_number};
+use crate::llm_parser::{extract, extract_number};
 use crate::llm_prompt::Prompt;
 use crate::llm_api::LLMApi;
 
@@ -60,8 +60,14 @@ pub fn run_state_machine(
 
                 continue;
             }
-            "extract_code" => {
-                let result = extract_code(current_state_params.get(state_params[0]).unwrap());
+            "extract_code" | "extract_dep" | "extract_test" => {
+                let extract_type = match state_type.as_str() {
+                    "extract_code" => "code",
+                    "extract_dep" => "dependencies",
+                    "extract_test" => "tests",
+                    &_ => panic!("Unknown extract type: {}", state_type),
+                };
+                let result = extract(current_state_params.get(state_params[0]).unwrap(), extract_type);
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 let param = current_state.transitions.get(&next_state_name).unwrap().to_string();
                 let mut next_state_params = HashMap::new();
