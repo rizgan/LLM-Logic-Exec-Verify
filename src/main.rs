@@ -26,8 +26,9 @@ fn main() {
     let states_str = std::fs::read_to_string("logic.md").unwrap();
     println!("====================");
     state_machine::run_state_machine(&states_str, &question, &mut code, &mut dependencies, &mut tests, &mut output, &prompt, &mut cache, lang);
-    println!("++++++++++++++++++++++++");
-    println!("Finished\n{}\n{}\n{}", code, dependencies, tests);
+    println!("++++++++ Finished ++++++++++++");
+    println!("\n{}\n{}\n{}", code, dependencies, tests);
+    println!("++++++++ Finished ++++++++++++");
 
 
 }

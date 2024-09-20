@@ -44,10 +44,9 @@ pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (bool, String
         let exit_code = parsed.0;
         let output = parsed.1;
 
-        println!("Exit code: {}", exit_code);
+        println!("Exit result: {}", exit_code == 0);
         if DEBUG {
             println!("Output: {}", output);
-            println!("===============");
         }
 
         let exit_code_bool = exit_code == 0;
