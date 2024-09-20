@@ -5,6 +5,7 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 ## Table of Contents
 
 - [Features](#features)
+- [How it works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
@@ -20,13 +21,39 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 - **Error Correction**: Iteratively rewrites code or tests to fix errors until successful compilation and testing.
 - **Caching Mechanism**: Implements caching to store and retrieve previous computations for efficiency.
 
+## How it works
+
+```mermaid
+stateDiagram
+[*] --> Start
+Start --> GenerateCode
+GenerateCode --> CompileCode
+CompileCode --> CompilationSuccess : Compilation successful
+CompileCode --> CheckDependencies : Compilation failed
+CheckDependencies --> GenerateDependencies : Dependencies required
+GenerateDependencies --> CompileCode
+CheckDependencies --> RewriteCode : No dependencies required
+RewriteCode --> CompileCode
+CompilationSuccess --> GenerateTests
+GenerateTests --> RunTests
+RunTests --> TestsPass : Tests passed
+RunTests --> DecideFix : Tests failed
+DecideFix --> RewriteCode : Error in code
+DecideFix --> RewriteTests : Error in tests
+RewriteCode --> CompileCode
+RewriteTests --> RunTests
+TestsPass --> [*]
+```
+
 ## Installation
 
 ### Prerequisites
 
 - **Rust**: Ensure you have Rust installed. You can install it from [here](https://www.rust-lang.org/tools/install).
-- **Ollama**: Required for LLM interactions. Install from [Ollama's official site](https://ollama.ai/).
-- **Download model:** 
+- **OpenAI API Key**: Create file "token.txt" in the root folder and put your OpenAI API key there.
+- **Ollama (Optional)**: Required for LLM interactions. Install from [Ollama's official site](https://ollama.ai/).
+
+### Download Ollam model (Optional) 
 ```bash
 ollama run gemma2:27b
 ```
@@ -69,27 +96,6 @@ cd LLM-Logic-Exec-Verify
 - Generate tests for the function.
 - Run the tests and iteratively fix any errors.
 
-```mermaid
-stateDiagram
-[*] --> Start
-Start --> GenerateCode
-GenerateCode --> CompileCode
-CompileCode --> CompilationSuccess : Compilation successful
-CompileCode --> CheckDependencies : Compilation failed
-CheckDependencies --> GenerateDependencies : Dependencies required
-GenerateDependencies --> CompileCode
-CheckDependencies --> RewriteCode : No dependencies required
-RewriteCode --> CompileCode
-CompilationSuccess --> GenerateTests
-GenerateTests --> RunTests
-RunTests --> TestsPass : Tests passed
-RunTests --> DecideFix : Tests failed
-DecideFix --> RewriteCode : Error in code
-DecideFix --> RewriteTests : Error in tests
-RewriteCode --> CompileCode
-RewriteTests --> RunTests
-TestsPass --> [*]
-```
 
 4. **Completion**
 
@@ -161,15 +167,18 @@ I would love to see contributions from the community. If you experience bugs, fe
 
 ## Versions history
 
-### 0.2.0 - State Machine - 20 September 2024
+### 0.3.0 - State Machine - 20 September 2024
+- Support OpenAI API
+
+### 0.2.0 - State Machine - 19 September 2024
 - Move prompts from code to "rust.prompt" file
 - Move logic from code to "logic.md" file
 
 ### 0.1.0 - Prototype - 17 September 2024
-  - Code Generation
-  - Automated Compilation
-  - Dependency Resolution
-  - Test Generation
-  - Error Correction
-  - Caching Mechanism 
+- Code Generation
+- Automated Compilation
+- Dependency Resolution
+- Test Generation
+- Error Correction
+- Caching Mechanism 
 

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use crate::build_tool::{build_tool, create_project};
 use crate::cache::Cache;
-use crate::DEBUG;
-use crate::llm_api::llm_request;
+use crate::{DEBUG, MAX_NUMBER_OF_ATTEMPTS};
 use crate::llm_parser::{extract_code, extract_number};
 use crate::llm_prompt::Prompt;
+use crate::llm_api::LLMApi;
 
 
 pub fn run_state_machine(
@@ -17,11 +17,19 @@ pub fn run_state_machine(
     prompt: &Prompt,
     cache:  &mut Cache,
     lang: &str,
+    llm: &LLMApi,
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
     let mut current_state_name: String = extract_first_state(states_str_var);
     let mut current_state_params: HashMap<String, String> = HashMap::new();
+    let mut number_of_attempts = 0;
     loop {
+        if number_of_attempts > MAX_NUMBER_OF_ATTEMPTS {
+            println!("To many attempts");
+            println!("================");
+            break;
+        }
+        number_of_attempts += 1;
         let state_name = current_state_name.as_str();
         println!("State name: {}", current_state_name);
         println!("Current state params: {:#?}", current_state_params);
@@ -39,7 +47,7 @@ pub fn run_state_machine(
                 let array_src = extract_param_array(state_params[1]);
                 let array:Vec<String> = replace_in_array(array_src,  question, code, dependencies, tests, output, current_state_params);
                 // println!("{:#?}", array);
-                let result = llm_request(state_params[0].replace("\"","").as_str(), &array, cache, prompt);
+                let result = llm.request(state_params[0].replace("\"", "").as_str(), &array, cache, prompt);
 
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 let param = current_state.transitions.get(&next_state_name).unwrap().to_string();

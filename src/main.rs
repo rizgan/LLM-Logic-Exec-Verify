@@ -8,12 +8,26 @@ mod state_machine;
 
 
 const DEBUG: bool = false;
-
+const MAX_NUMBER_OF_ATTEMPTS:i32 = 15;
 fn main() {
 
     let mut cache = cache::Cache::new();
     let lang = "rust";
     let prompt = llm_prompt::Prompt::new(&format!("{}.prompt", lang));
+    // if file token.txt exists
+    let llm= if std::path::Path::new("token.txt").exists() {
+        println!("Use OpenAI API");
+        println!("");
+        let token = std::fs::read_to_string("token.txt").unwrap();
+        llm_api::LLMApi::new(llm_api::ModelType::OpenAI {
+            api_key: token.trim().to_string()
+        })
+    }
+    else {
+        println!("Use Ollama API");
+        println!("");
+        llm_api::LLMApi::new(llm_api::ModelType::Ollama)
+    };
 
     println!("Use '\\' char in the end of line for multiline mode or just copy-paste multiline text.");
     println!("");
@@ -67,7 +81,7 @@ fn main() {
 
     let states_str = std::fs::read_to_string("logic.md").unwrap();
     println!("====================");
-    state_machine::run_state_machine(&states_str, &question, &mut code, &mut dependencies, &mut tests, &mut output, &prompt, &mut cache, lang);
+    state_machine::run_state_machine(&states_str, &question, &mut code, &mut dependencies, &mut tests, &mut output, &prompt, &mut cache, lang, &llm);
     println!("++++++++ Finished ++++++++++++");
     println!("\n{}\n{}\n{}", code, dependencies, tests);
     println!("++++++++ Finished ++++++++++++");
