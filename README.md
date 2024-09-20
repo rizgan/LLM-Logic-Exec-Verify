@@ -27,13 +27,12 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 stateDiagram
 [*] --> GenerateCode
 GenerateCode --> CompileCode
-CompileCode --> CompilationSuccess : Compilation successful
+CompileCode --> GenerateTests : Compilation successful
 CompileCode --> CheckDependencies : Compilation failed
 CheckDependencies --> GenerateDependencies : Dependencies required
 GenerateDependencies --> CompileCode
 CheckDependencies --> RewriteCode : No dependencies required
 RewriteCode --> CompileCode
-CompilationSuccess --> GenerateTests
 GenerateTests --> RunTests
 RunTests --> TestsPass : Tests passed
 RunTests --> DecideFix : Tests failed
