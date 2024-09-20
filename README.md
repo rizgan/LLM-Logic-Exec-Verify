@@ -10,7 +10,7 @@ A Rust-based tool that automates the generation, compilation, and testing of cod
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [For contributors](#for-contributors)
-- [Versions history](#versions-history)
+- [Version history](#version-history)
 
 ## Features
 
@@ -165,9 +165,9 @@ I would love to see contributions from the community. If you experience bugs, fe
 ![Logic](logic.png)
 
 
-## Versions history
+## Version history
 
-### 0.4.0 - State Machine - 20 September 2024
+### 0.4.0 - LLM Generate Result Extraction - 20 September 2024
 - Extract_code function replaced by extract_code, extract_dep, extract_test functions
 
 ### 0.3.0 - State Machine - 20 September 2024
