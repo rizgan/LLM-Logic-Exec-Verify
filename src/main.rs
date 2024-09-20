@@ -15,6 +15,8 @@ fn main() {
     let lang = "rust";
     let prompt = llm_prompt::Prompt::new(&format!("{}.prompt", lang));
 
+    println!("Use '\\' char in the end of line for multiline mode or just copy-paste multiline text.");
+    println!("");
     println!("Explain what the function should do:");
     let mut question;
     let mut lines = vec![];
