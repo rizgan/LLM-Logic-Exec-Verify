@@ -79,7 +79,8 @@ impl LLMApi {
                 ];
 
                 let request = OpenAIChatRequest {
-                    model: "gpt-4o-2024-08-06".to_string(), // Specify the desired OpenAI model
+                    model: "gpt-4o-2024-08-06".to_string(),
+                    // model: "gpt-4".to_string(),
                     messages,
                     max_tokens: 500,
                     temperature: 0.7,
