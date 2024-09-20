@@ -12,8 +12,7 @@ const MAX_NUMBER_OF_ATTEMPTS:i32 = 30;
 fn main() {
 
     let mut cache = cache::Cache::new();
-    let lang = "rust";
-    let prompt = llm_prompt::Prompt::new(&format!("{}.prompt", lang));
+    let prompt = llm_prompt::Prompt::new("prompt.txt");
     // if file token.txt exists
     let llm= if std::path::Path::new("token.txt").exists() {
         println!("Use OpenAI API");
@@ -81,7 +80,7 @@ fn main() {
 
     let states_str = std::fs::read_to_string("logic.md").unwrap();
     println!("====================");
-    state_machine::run_state_machine(&states_str, &question, &mut code, &mut dependencies, &mut tests, &mut output, &prompt, &mut cache, lang, &llm);
+    state_machine::run_state_machine(&states_str, &question, &mut code, &mut dependencies, &mut tests, &mut output, &prompt, &mut cache, &llm);
     println!("++++++++ Finished ++++++++++++");
     println!("\n{}\n{}\n{}", code, dependencies, tests);
     println!("++++++++ Finished ++++++++++++");

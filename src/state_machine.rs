@@ -16,7 +16,6 @@ pub fn run_state_machine(
     output: &mut String,
     prompt: &Prompt,
     cache:  &mut Cache,
-    lang: &str,
     llm: &LLMApi,
 ) {
     let states: HashMap<String, State> = extract_states(states_str_var);
@@ -106,7 +105,7 @@ pub fn run_state_machine(
                     }
                 }
 
-                create_project(lang, code, dependencies, tests);
+                create_project(code, dependencies, tests);
                 let next_state_name = current_state.transitions.keys().next().unwrap().to_string();
                 current_state_name = next_state_name;
                 current_state_params = HashMap::new();
@@ -114,7 +113,7 @@ pub fn run_state_machine(
                 continue;
             }
             "build_tool" => {
-                let result:(bool, String) = build_tool(lang, &state_params[0].replace("\"",""), cache);
+                let result:(bool, String) = build_tool(&state_params[0].replace("\"",""), cache);
                 let param_first_name = result.0.to_string();
                 let param_first_name_value = result.0.to_string();
                 let param_second_name = "output".to_string();
