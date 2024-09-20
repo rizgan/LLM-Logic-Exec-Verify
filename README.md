@@ -169,7 +169,7 @@ I would love to see contributions from the community. If you experience bugs, fe
 
 ## Version history
 
-### 0.5.0 - Support Rust code generation ONLY  20 September 2024
+### 0.5.0 - Support only Rust code generation 20 September 2024
 - Make decision to support only Rust code generation
 
 ### 0.4.0 - LLM Generate Result Extraction - 20 September 2024
