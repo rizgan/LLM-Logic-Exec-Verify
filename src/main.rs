@@ -8,7 +8,7 @@ mod state_machine;
 
 
 const DEBUG: bool = false;
-const MAX_NUMBER_OF_ATTEMPTS:i32 = 15;
+const MAX_NUMBER_OF_ATTEMPTS:i32 = 30;
 fn main() {
 
     let mut cache = cache::Cache::new();
