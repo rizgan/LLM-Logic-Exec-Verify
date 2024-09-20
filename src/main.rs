@@ -10,30 +10,44 @@ mod state_machine;
 const DEBUG: bool = false;
 
 fn main() {
+
     let mut cache = cache::Cache::new();
     let lang = "rust";
     let prompt = llm_prompt::Prompt::new(&format!("{}.prompt", lang));
 
     println!("Explain what the function should do:");
-    let mut question = String::new();
+    let mut question;
     let mut lines = vec![];
     let mut start_sec = 0 as u64;
     loop {
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
-        lines.push(line);
+
+        if line.ends_with("\\\r\n") {
+            let mut line_clone = line.clone();
+            line_clone.pop();
+            line_clone.pop();
+            line_clone.pop();
+            line_clone.push('\r');
+            line_clone.push('\n');
+            lines.push(line_clone.clone());
+        } else {
+            lines.push(line.clone());
+        }
+
         let now_sec = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-        if start_sec == 0 {
+
+        if start_sec == 0  {
             start_sec = now_sec;
         } else {
             if now_sec - start_sec < 1 {
                 continue;
             } else {
+                if line.ends_with("\\\r\n") {
+                    continue;
+                }
                 break
             }
-        }
-        if question.trim() != "" {
-            break;
         }
     }
     question = lines.join("");
