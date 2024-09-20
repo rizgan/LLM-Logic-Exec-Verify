@@ -34,18 +34,24 @@ Rust language code of this function:
 {{{1}}}
 ```
 
+Cargo.toml file:
+```toml
+{{{2}}}
+```
+
+
 ```bash
 cargo build
 ```
 
 Result of compilation:
 ```console
-{{{2}}}
+{{{3}}}
 ```
 
 For this function is required some dependencies in Cargo.toml file?
-1. Some dependencies are required
-2. All dependencies are already included in standard library
+1. Some dependencies are required to add in Cargo.toml file
+2. All dependencies are already included or placed in standard library
 Answer(just number):
 
 

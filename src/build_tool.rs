@@ -1,8 +1,13 @@
 use crate::cache::Cache;
 use crate::{DEBUG};
 
-pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (bool, String) {
+pub fn build_tool(lang: &str, command_str: &str, cache: &mut Cache) -> (bool, String) {
     if lang == "rust" {
+        let command = if command_str == "build_tests" {
+            "test --no-run"
+        } else {
+            command_str
+        };
         println!("Exec: cargo {}", command);
         let code = if std::path::Path::new("sandbox/src/main.rs").exists() {
             std::fs::read_to_string("sandbox/src/main.rs").unwrap()
@@ -20,9 +25,10 @@ pub fn build_tool(lang: &str, command: &str, cache: &mut Cache) -> (bool, String
         let result_str_opt = cache.get(&key);
         let result_str = match result_str_opt {
             None => {
-
+                // split by ' '
+                let args= command.split(" ").collect::<Vec<&str>>();
                 let output = std::process::Command::new("cargo")
-                    .arg(command)
+                    .args(args)
                     .current_dir("sandbox")
                     .output()
                     .unwrap();

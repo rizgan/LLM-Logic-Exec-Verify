@@ -17,6 +17,8 @@ fn main() {
 
     println!("Use '\\' char in the end of line for multiline mode or just copy-paste multiline text.");
     println!("");
+    println!("For launch code generation, type ENTER twice after the last line of the prompt.");
+    println!("");
     println!("Explain what the function should do:");
     let mut question;
     let mut lines = vec![];
@@ -53,8 +55,10 @@ fn main() {
         }
     }
     question = lines.join("");
-    question.pop();
-    question.pop();
+    question = question.trim().to_string();
+    question.push('\r');
+    question.push('\n');
+
 
     let mut code = "".to_string();
     let mut dependencies = "".to_string();
